@@ -42,7 +42,7 @@ def _get_pattern(shape, w_pattern='ring', generator=None):
 
 
 # def get_noise(shape: Union[torch.Size, List, Tuple], model_hash: str) -> torch.Tensor:
-def get_noise(shape: Union[torch.Size, List, Tuple], model_hash: str, generator=None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:    
+def get_noise(shape: Union[torch.Size, List, Tuple], model_hash: str, org, generator=None) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:    
     # for now we hard code all hyperparameters
     w_channel = 0 # id for watermarked channel
     w_radius = 10 # watermark radius
@@ -78,7 +78,8 @@ def get_noise(shape: Union[torch.Size, List, Tuple], model_hash: str, generator=
     file_path = os.path.join(temp_dir, file_name)
     np.save(file_path, w_key)
 
-    org = get_org()
+    # org = get_org()
+    
     repo_id = os.path.join(org, model_hash)
 
     api.create_repo(repo_id=repo_id, exist_ok=True, repo_type="dataset")

@@ -41,11 +41,11 @@ def load_keys(cache_dir):
 
 
 # def detect(image: Union[PIL.Image.Image, torch.Tensor, np.ndarray], model_hash: str):
-def detect(image: Union[PIL.Image.Image, torch.Tensor, np.ndarray], pipe, model_hash):
+def detect(image: Union[PIL.Image.Image, torch.Tensor, np.ndarray], pipe, model_hash, org):
     detection_time_num_inference = 50
     threshold = 77
 
-    org = get_org()
+    # org = get_org()
     repo_id = os.path.join(org, model_hash)
 
     cache_dir = snapshot_download(repo_id, repo_type="dataset")
