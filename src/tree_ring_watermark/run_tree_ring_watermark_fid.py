@@ -6,11 +6,11 @@ import json
 
 import torch
 
-from inverse_stable_diffusion import InversableStableDiffusionPipeline
+from .inverse_stable_diffusion import InversableStableDiffusionPipeline
 from diffusers import DPMSolverMultistepScheduler
-from optim_utils import *
-from io_utils import *
-from pytorch_fid.fid_score import *
+from .optim_utils import *
+from .io_utils import *
+from .pytorch_fid.fid_score import *
 
 
 def main(args):

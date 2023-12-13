@@ -7,11 +7,11 @@ from sklearn import metrics
 
 import torch
 
-from inverse_stable_diffusion import InversableStableDiffusionPipeline
+from .inverse_stable_diffusion import InversableStableDiffusionPipeline
 from diffusers import DPMSolverMultistepScheduler
-import open_clip
-from optim_utils import *
-from io_utils import *
+from .open_clip import create_model_and_transforms, get_tokenizer
+from .optim_utils import *
+from .io_utils import *
 
 
 def main(args):
@@ -35,8 +35,8 @@ def main(args):
 
     # reference model
     if args.reference_model is not None:
-        ref_model, _, ref_clip_preprocess = open_clip.create_model_and_transforms(args.reference_model, pretrained=args.reference_model_pretrain, device=device)
-        ref_tokenizer = open_clip.get_tokenizer(args.reference_model)
+        ref_model, _, ref_clip_preprocess = create_model_and_transforms(args.reference_model, pretrained=args.reference_model_pretrain, device=device)
+        ref_tokenizer = get_tokenizer(args.reference_model)
 
     # dataset
     dataset, prompt_key = get_dataset(args)

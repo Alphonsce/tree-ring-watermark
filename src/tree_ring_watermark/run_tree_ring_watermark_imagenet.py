@@ -7,7 +7,7 @@ from sklearn import metrics
 
 import torch
 
-from guided_diffusion.script_util import (
+from .guided_diffusion.script_util import (
     NUM_CLASSES,
     model_and_diffusion_defaults,
     create_model_and_diffusion,
@@ -15,8 +15,8 @@ from guided_diffusion.script_util import (
     args_to_dict,
 )
 
-from optim_utils import *
-from io_utils import *
+from .optim_utils import *
+from .io_utils import *
 
 
 def main(args):
