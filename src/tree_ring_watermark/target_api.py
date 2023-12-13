@@ -41,8 +41,5 @@ if __name__ == '__main__':
     parser.add_argument('--org_name', default='Alphonsce')
 
     args = parser.parse_args()
-
-    if args.test_num_inference_steps is None:
-        args.test_num_inference_steps = args.num_inference_steps
     
     main(args)
