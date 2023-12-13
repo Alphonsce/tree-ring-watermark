@@ -17,6 +17,7 @@ def main(args):
     model_id = 'stabilityai/stable-diffusion-2-1-base'
 
     org_name = args.org_name
+    model_hash = args.model_hash
     # load model
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -29,16 +30,17 @@ def main(args):
     pipe = pipe.to(device)
 
     shape = (1, 4, 64, 64)
-    latents, w_key, w_mask = get_noise(shape, pipe, org=org_name)
+    latents, w_key, w_mask = get_noise(shape, model_hash, org=org_name)
 
     watermarked_image = pipe(prompt="an astronaut", latents=latents).images[0]
 
-    is_watermarked = detect(watermarked_image, pipe, w_key, w_mask, org=org_name)
+    is_watermarked = detect(watermarked_image, pipe, model_hash, org=org_name)
     print(f'is_watermarked: {is_watermarked}')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='diffusion watermark')
     parser.add_argument('--org_name', default='Alphonsce')
+    parser.add_argument('--model_hash', default='StableWM')
 
     args = parser.parse_args()
     
