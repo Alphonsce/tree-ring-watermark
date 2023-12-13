@@ -3,6 +3,6 @@
 # 2. run `make deps_table_update``
 deps = {
     "torch": "torch==1.13.0",
-    "transformers": "transformers==4.23.1",
-    "diffusers": "diffusers==0.11.1",
+    "transformers": "transformers==4.31.0",
+    "diffusers": "diffusers==0.14.0",
 }

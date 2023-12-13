@@ -20,8 +20,8 @@ from setuptools import find_packages, setup
 # 2. once modified, run: `make deps_table_update` to update src/tree-ring-watermark/dependency_versions_table.py
 _deps = [
    "torch==1.13.0",
-   "transformers==4.23.1",
-   "diffusers==0.11.1",
+   "transformers==4.31.0",
+   "diffusers==0.14.0",
 ]
 
 # this is a lookup table with items like:
@@ -99,7 +99,7 @@ install_requires = [
 
 setup(
     name="tree_ring_watermark",
-    version="0.0.2",
+    version="0.1.0",
     description="tree_ring_watermark",
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",

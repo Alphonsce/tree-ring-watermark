@@ -1,4 +1,5 @@
-__version__ = "0.0.2"
+# I call it a 0.1.0 version
+__version__ = "0.1.0"
 
 from ._check import check
 from ._detect import detect
