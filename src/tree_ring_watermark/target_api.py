@@ -30,7 +30,7 @@ def main(args):
     pipe = pipe.to(device)
 
     shape = (1, 4, 64, 64)
-    latents, w_key, w_mask = get_noise(shape, model_hash, org=org_name)
+    latents = get_noise(shape, model_hash, org=org_name)
 
     watermarked_image = pipe(prompt="an astronaut", latents=latents).images[0]
 
@@ -41,6 +41,48 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='diffusion watermark')
     parser.add_argument('--org_name', default='Alphonsce')
     parser.add_argument('--model_hash', default='StableWM')
+#-----------------
+    parser = argparse.ArgumentParser(description='diffusion watermark')
+    parser.add_argument('--run_name', default='test')
+    parser.add_argument('--dataset', default='Gustavosta/Stable-Diffusion-Prompts')
+    parser.add_argument('--start', default=0, type=int)
+    parser.add_argument('--end', default=10, type=int)
+    parser.add_argument('--image_length', default=512, type=int)
+    parser.add_argument('--model_id', default='stabilityai/stable-diffusion-2-1-base')
+    parser.add_argument('--with_tracking', action='store_true')
+    parser.add_argument('--num_images', default=1, type=int)
+    parser.add_argument('--guidance_scale', default=7.5, type=float)
+    parser.add_argument('--num_inference_steps', default=50, type=int)
+    parser.add_argument('--test_num_inference_steps', default=None, type=int)
+    parser.add_argument('--reference_model', default=None)
+    parser.add_argument('--reference_model_pretrain', default=None)
+    parser.add_argument('--max_num_log_image', default=100, type=int)
+    parser.add_argument('--gen_seed', default=0, type=int)
+
+    # watermark
+    parser.add_argument('--w_seed', default=999999, type=int)
+    parser.add_argument('--w_channel', default=0, type=int)
+    parser.add_argument('--w_pattern', default='rand')
+    parser.add_argument('--w_mask_shape', default='circle')
+    parser.add_argument('--w_radius', default=10, type=int)
+    parser.add_argument('--w_measurement', default='l1_complex')
+    parser.add_argument('--w_injection', default='complex')
+    parser.add_argument('--w_pattern_const', default=0, type=float)
+    
+    # for image distortion
+    parser.add_argument('--r_degree', default=None, type=float)
+    parser.add_argument('--jpeg_ratio', default=None, type=int)
+    parser.add_argument('--crop_scale', default=None, type=float)
+    parser.add_argument('--crop_ratio', default=None, type=float)
+    parser.add_argument('--gaussian_blur_r', default=None, type=int)
+    parser.add_argument('--gaussian_std', default=None, type=float)
+    parser.add_argument('--brightness_factor', default=None, type=float)
+    parser.add_argument('--rand_aug', default=0, type=int)
+
+    args = parser.parse_args()
+
+    if args.test_num_inference_steps is None:
+        args.test_num_inference_steps = args.num_inference_steps
 
     args = parser.parse_args()
     
