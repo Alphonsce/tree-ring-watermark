@@ -13,7 +13,6 @@ from .open_clip import create_model_and_transforms, get_tokenizer
 from .optim_utils import *
 from .io_utils import *
 
-
 def main(args):
     table = None
     if args.with_tracking:
@@ -83,7 +82,7 @@ def main(args):
         # get watermarking mask
         watermarking_mask = get_watermarking_mask(init_latents_w, args, device)
 
-        # inject watermark
+        # inject watermark into latents
         init_latents_w = inject_watermark(init_latents_w, watermarking_mask, gt_patch, args)
 
         outputs_w = pipe(
@@ -103,8 +102,10 @@ def main(args):
 
         # reverse img without watermarking
         img_no_w = transform_img(orig_image_no_w_auged).unsqueeze(0).to(text_embeddings.dtype).to(device)
+        # image latents means: z - latents in Stable diff, i.e. image passed through vae
         image_latents_no_w = pipe.get_image_latents(img_no_w, sample=False)
 
+        # forward_diffusion здесь - это получение шума по картинке
         reversed_latents_no_w = pipe.forward_diffusion(
             latents=image_latents_no_w,
             text_embeddings=text_embeddings,
@@ -151,20 +152,21 @@ def main(args):
             clip_scores.append(w_no_sim)
             clip_scores_w.append(w_sim)
 
-    # roc
-    preds = no_w_metrics +  w_metrics
-    t_labels = [0] * len(no_w_metrics) + [1] * len(w_metrics)
+        # roc
+        if (i - args.start) % args.freq_log == 0:
+            preds = no_w_metrics +  w_metrics
+            t_labels = [0] * len(no_w_metrics) + [1] * len(w_metrics)
 
-    fpr, tpr, thresholds = metrics.roc_curve(t_labels, preds, pos_label=1)
-    auc = metrics.auc(fpr, tpr)
-    acc = np.max(1 - (fpr + (1 - tpr))/2)
-    low = tpr[np.where(fpr<.01)[0][-1]]
+            fpr, tpr, thresholds = metrics.roc_curve(t_labels, preds, pos_label=1)
+            auc = metrics.auc(fpr, tpr)
+            acc = np.max(1 - (fpr + (1 - tpr))/2)
+            low = tpr[np.where(fpr<.01)[0][-1]]
 
-    if args.with_tracking:
-        wandb.log({'Table': table})
-        wandb.log({'clip_score_mean': mean(clip_scores), 'clip_score_std': stdev(clip_scores),
-                   'w_clip_score_mean': mean(clip_scores_w), 'w_clip_score_std': stdev(clip_scores_w),
-                   'auc': auc, 'acc':acc, 'TPR@1%FPR': low})
+            if args.with_tracking:
+                wandb.log({'Table': table})
+                wandb.log({'clip_score_mean': mean(clip_scores), 'clip_score_std': stdev(clip_scores),
+                        'w_clip_score_mean': mean(clip_scores_w), 'w_clip_score_std': stdev(clip_scores_w),
+                        'auc': auc, 'acc':acc, 'TPR@1%FPR': low})
     
     print(f'clip_score_mean: {mean(clip_scores)}')
     print(f'w_clip_score_mean: {mean(clip_scores_w)}')
@@ -180,9 +182,13 @@ if __name__ == '__main__':
     parser.add_argument('--image_length', default=512, type=int)
     parser.add_argument('--model_id', default='stabilityai/stable-diffusion-2-1-base')
     parser.add_argument('--with_tracking', action='store_true')
+
+    # parser.add_argument('--create_dataset', default='False')
+    parser.add_argument('--freq_log', default=20)
+
     parser.add_argument('--num_images', default=1, type=int)
     parser.add_argument('--guidance_scale', default=7.5, type=float)
-    parser.add_argument('--num_inference_steps', default=50, type=int)
+    parser.add_argument('--num_inference_steps', default=40, type=int)
     parser.add_argument('--test_num_inference_steps', default=None, type=int)
     parser.add_argument('--reference_model', default=None)
     parser.add_argument('--reference_model_pretrain', default=None)

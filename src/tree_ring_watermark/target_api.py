@@ -18,15 +18,24 @@ def main(args):
 
     org_name = args.org_name
     model_hash = args.model_hash
-    # load model
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    # model_id = args.model_id
+    # scheduler = DPMSolverMultistepScheduler.from_pretrained(args.model_id, subfolder='scheduler')
+    # pipe = InversableStableDiffusionPipeline.from_pretrained(
+    #     args.model_id,
+    #     scheduler=scheduler,
+    #     torch_dtype=torch.float16,
+    #     revision='fp16',
+    #     )
+    # pipe = pipe.to(device)
 
     # IMPORTANT: We need to make sure to be able to use a normal diffusion pipeline so that people see 
     # the tree-ring-watermark method as general enough
     scheduler = DPMSolverMultistepScheduler.from_pretrained(model_id, subfolder='scheduler')
     # or
     scheduler = DDIMScheduler.from_pretrained(model_id, subfolder='scheduler')
-    pipe = DiffusionPipeline.from_pretrained(model_id, scheduler=scheduler, torch_dtype=torch.float16)
+    pipe = DiffusionPipeline.from_pretrained(model_id, scheduler=scheduler, torch_dtype=torch.float16,)
     pipe = pipe.to(device)
 
     shape = (1, 4, 64, 64)

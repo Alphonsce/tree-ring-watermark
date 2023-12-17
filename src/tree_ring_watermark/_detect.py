@@ -42,6 +42,9 @@ def load_keys(cache_dir):
 
 # def detect(image: Union[PIL.Image.Image, torch.Tensor, np.ndarray], model_hash: str):
 def detect(image: Union[PIL.Image.Image, torch.Tensor, np.ndarray], pipe, model_hash, org):
+    '''
+    pipe: Inverse Diffusion process pipeline
+    '''
     detection_time_num_inference = 50
     threshold = 77
 
@@ -56,6 +59,7 @@ def detect(image: Union[PIL.Image.Image, torch.Tensor, np.ndarray], pipe, model_
     pipe.scheduler = DDIMInverseScheduler.from_config(pipe.scheduler.config)
     img = _transform_img(image).unsqueeze(0).to(pipe.unet.dtype).to(pipe.device)
     image_latents = pipe.vae.encode(img).latent_dist.mode() * 0.18215
+    # Here latents are z in stable diff
     inverted_latents = pipe(
             prompt='',
             latents=image_latents,
