@@ -8,8 +8,12 @@ from sklearn import metrics
 import torch
 
 from .inverse_stable_diffusion import InversableStableDiffusionPipeline
+
 from diffusers import DPMSolverMultistepScheduler
+
+from .pytorch_fid.fid_score import *
 from .open_clip import create_model_and_transforms, get_tokenizer
+
 from .optim_utils import *
 from .io_utils import *
 
@@ -183,7 +187,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_id', default='stabilityai/stable-diffusion-2-1-base')
     parser.add_argument('--with_tracking', action='store_true')
 
-    # parser.add_argument('--create_dataset', default='False')
+    # logs and metrics:
     parser.add_argument('--freq_log', default=20, type=int)
 
     parser.add_argument('--num_images', default=1, type=int)

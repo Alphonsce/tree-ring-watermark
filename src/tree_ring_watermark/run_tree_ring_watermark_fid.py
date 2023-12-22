@@ -134,9 +134,10 @@ def main(args):
                                           2048,
                                           num_workers)
 
-    if args.with_tracking:
-        wandb.log({'Table': table})
-        wandb.log({'fid_no_w': fid_value_no_w, 'fid_w': fid_value_w})
+    if (i - args.start) % args.freq_log == 0:
+        if args.with_tracking:
+            wandb.log({'Table': table})
+            wandb.log({'fid_no_w': fid_value_no_w, 'fid_w': fid_value_w})
 
     print(f'fid_no_w: {fid_value_no_w}, fid_w: {fid_value_w}')
 
@@ -157,6 +158,8 @@ if __name__ == '__main__':
     parser.add_argument('--gen_seed', default=0, type=int)
     parser.add_argument('--prompt_file', default='fid_outputs/coco/meta_data.json')
     parser.add_argument('--gt_folder', default='fid_outputs/coco/ground_truth')
+
+    parser.add_argument('--freq_log', default=20, type=int)
 
     # watermark
     parser.add_argument('--w_seed', default=999999, type=int)
