@@ -159,7 +159,7 @@ if __name__ == '__main__':
     parser.add_argument('--prompt_file', default='fid_outputs/coco/meta_data.json')
     parser.add_argument('--gt_folder', default='fid_outputs/coco/ground_truth')
 
-    parser.add_argument('--freq_log', default=100, type=int)
+    parser.add_argument('--freq_log', default=5000, type=int)
 
     # watermark
     parser.add_argument('--w_seed', default=999999, type=int)
