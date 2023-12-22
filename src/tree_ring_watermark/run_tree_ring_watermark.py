@@ -184,7 +184,7 @@ if __name__ == '__main__':
     parser.add_argument('--with_tracking', action='store_true')
 
     # parser.add_argument('--create_dataset', default='False')
-    parser.add_argument('--freq_log', default=20)
+    parser.add_argument('--freq_log', default=20, type=int)
 
     parser.add_argument('--num_images', default=1, type=int)
     parser.add_argument('--guidance_scale', default=7.5, type=float)
