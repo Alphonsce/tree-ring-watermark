@@ -172,9 +172,9 @@ def main(args):
                         'w_clip_score_mean': mean(clip_scores_w), 'w_clip_score_std': stdev(clip_scores_w),
                         'auc': auc, 'acc':acc, 'TPR@1%FPR': low})
     
-    print(f'clip_score_mean: {mean(clip_scores)}')
-    print(f'w_clip_score_mean: {mean(clip_scores_w)}')
-    print(f'auc: {auc}, acc: {acc}, TPR@1%FPR: {low}')
+            print(f'clip_score_mean: {mean(clip_scores)}')
+            print(f'w_clip_score_mean: {mean(clip_scores_w)}')
+            print(f'auc: {auc}, acc: {acc}, TPR@1%FPR: {low}')
 
 
 if __name__ == '__main__':

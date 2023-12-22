@@ -110,36 +110,36 @@ def main(args):
         orig_image_w.save(f'{w_dir}/{image_file_name}')
 
     ### calculate fid
-    try:
-        num_cpus = len(os.sched_getaffinity(0))
-    except AttributeError:
-        num_cpus = os.cpu_count()
+        if (i - args.start) % args.freq_log == 0:
+            try:
+                num_cpus = len(os.sched_getaffinity(0))
+            except AttributeError:
+                num_cpus = os.cpu_count()
 
-    num_workers = min(num_cpus, 8) if num_cpus is not None else 0
+            num_workers = min(num_cpus, 8) if num_cpus is not None else 0
 
-    # fid for no_w
-    if args.run_no_w:
-        fid_value_no_w = calculate_fid_given_paths([args.gt_folder, no_w_dir],
-                                            50,
-                                            device,
-                                            2048,
-                                            num_workers)
-    else:
-        fid_value_no_w = None
+            # fid for no_w
+            if args.run_no_w:
+                fid_value_no_w = calculate_fid_given_paths([args.gt_folder, no_w_dir],
+                                                    50,
+                                                    device,
+                                                    2048,
+                                                    num_workers)
+            else:
+                fid_value_no_w = None
 
-    # fid for w
-    fid_value_w = calculate_fid_given_paths([args.gt_folder, w_dir],
-                                          50,
-                                          device,
-                                          2048,
-                                          num_workers)
+            # fid for w
+            fid_value_w = calculate_fid_given_paths([args.gt_folder, w_dir],
+                                                50,
+                                                device,
+                                                2048,
+                                                num_workers)
 
-    if (i - args.start) % args.freq_log == 0:
-        if args.with_tracking:
-            wandb.log({'Table': table})
-            wandb.log({'fid_no_w': fid_value_no_w, 'fid_w': fid_value_w})
+            if args.with_tracking:
+                wandb.log({'Table': table})
+                wandb.log({'fid_no_w': fid_value_no_w, 'fid_w': fid_value_w})
 
-    print(f'fid_no_w: {fid_value_no_w}, fid_w: {fid_value_w}')
+            print(f'fid_no_w: {fid_value_no_w}, fid_w: {fid_value_w}')
 
 
 if __name__ == '__main__':
