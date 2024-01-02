@@ -110,7 +110,7 @@ def main(args):
         orig_image_w.save(f'{w_dir}/{image_file_name}')
 
     ### calculate fid
-        if (i - args.start) % args.freq_log == 0:
+        if (i - args.start) % args.freq_log == 0 and i > args.freq_log - 1:
             try:
                 num_cpus = len(os.sched_getaffinity(0))
             except AttributeError:

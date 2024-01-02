@@ -1,3 +1,5 @@
+from PIL import Image 
+
 import argparse
 import wandb
 import copy
@@ -146,6 +148,10 @@ def main(args):
         no_w_metrics.append(-no_w_metric)
         w_metrics.append(-w_metric)
 
+        if args.save_locally:
+            orig_image_no_w.save(args.local_path + f"/imgs_no_w/img{i}.png")
+            orig_image_w.save(args.local_path + f"/imgs_w/w_img{i}.png")
+
         if args.with_tracking:
             if (args.reference_model is not None) and (i < args.max_num_log_image):
                 # log images when we use reference_model
@@ -157,7 +163,7 @@ def main(args):
             clip_scores_w.append(w_sim)
 
         # roc
-        if (i - args.start) % args.freq_log == 0:
+        if (i - args.start) % args.freq_log == 0 and i > args.freq_log - 1:
             preds = no_w_metrics +  w_metrics
             t_labels = [0] * len(no_w_metrics) + [1] * len(w_metrics)
 
@@ -189,6 +195,8 @@ if __name__ == '__main__':
 
     # logs and metrics:
     parser.add_argument('--freq_log', default=20, type=int)
+    parser.add_argument('--save_locally', action='store_true')
+    parser.add_argument('--local_path', default='/data/varlamov_a_data/dima/images')
 
     parser.add_argument('--num_images', default=1, type=int)
     parser.add_argument('--guidance_scale', default=7.5, type=float)
