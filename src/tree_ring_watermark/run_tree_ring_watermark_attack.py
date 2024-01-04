@@ -33,7 +33,7 @@ from .io_utils import *
 def main(args):
     table = None
     if args.with_tracking:
-        wandb.init(project='diffusion_watermark_attacks', name=args.run_name, tags=['tree_ring_watermark'])
+        wandb.init(project=args.project_name, name=args.run_name, tags=['tree_ring_watermark'])
         wandb.config.update(args)
         if args.use_attack:
             table = wandb.Table(columns=['gen_no_w', 'no_w_clip_score', 'gen_w', 'w_clip_score', 'att_gen_w', 'prompt', 'no_w_metric', 'w_metric'])
@@ -216,6 +216,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='diffusion watermark')
+    parser.add_argument('--project_name', default='watermark_attacks')
     parser.add_argument('--run_name', default='test')
     parser.add_argument('--dataset', default='Gustavosta/Stable-Diffusion-Prompts')
     parser.add_argument('--start', default=0, type=int)
