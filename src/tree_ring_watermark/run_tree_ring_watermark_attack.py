@@ -77,7 +77,7 @@ def main(args):
             attack_pipe = ReSDPipeline.from_pretrained("stabilityai/stable-diffusion-2-1", torch_dtype=torch.float16, revision="fp16")
             attack_pipe.set_progress_bar_config(disable=True)
             attack_pipe.to(device)
-            attacker = DiffWMAttacker(attack_pipe, noise_step=args.diff_attack_steps, captions={})
+            attacker = DiffWMAttacker(attack_pipe, noise_step=args.diff_attack_steps)
         if args.attack_type == "vae":
             attacker = VAEWMAttacker(args.vae_attack_name, quality=args.vae_attack_quality, metric='mse', device=device)
 
@@ -132,7 +132,10 @@ def main(args):
         ### VAE or diffusion attack:
         # move this code block upper if want to combine simple distortions with attacks
         if args.use_attack:
-            att_img_w = attacker.attack(orig_image_w)
+            if args.use_attack_prompt:
+                att_img_w = attacker.attack(orig_image_w, prompt=current_prompt)
+            else:
+                att_img_w = attacker.attack(orig_image_w)
             orig_image_w_auged = att_img_w
 
         # reverse img without watermarking
@@ -263,6 +266,7 @@ if __name__ == '__main__':
     # VAE or Diff attack
     parser.add_argument('--use_attack', action='store_true')
     parser.add_argument('--attack_type', default='diff')
+    parser.add_argument('--use_attack_prompt', action='store_true')
     parser.add_argument('--diff_attack_steps', default=60, type=int)
     parser.add_argument('--vae_attack_name', default='cheng2020-anchor')
     parser.add_argument('--vae_attack_quality', default=3, type=int)
