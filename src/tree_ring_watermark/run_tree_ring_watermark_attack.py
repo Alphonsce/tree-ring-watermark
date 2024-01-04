@@ -132,7 +132,7 @@ def main(args):
         ### VAE or diffusion attack:
         # move this code block upper if want to combine simple distortions with attacks
         if args.use_attack:
-            if args.use_attack_prompt:
+            if args.use_attack_prompt and args.attack_type == "diff":
                 att_img_w = attacker.attack(orig_image_w, prompt=current_prompt)
             else:
                 att_img_w = attacker.attack(orig_image_w)
