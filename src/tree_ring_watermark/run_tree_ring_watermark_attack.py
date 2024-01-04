@@ -73,13 +73,13 @@ def main(args):
     w_metrics = []
 
     if args.use_attack:
-    if args.attack_type == "diff":
-        attack_pipe = ReSDPipeline.from_pretrained("stabilityai/stable-diffusion-2-1", torch_dtype=torch.float16, revision="fp16")
-        attack_pipe.set_progress_bar_config(disable=True)
-        attack_pipe.to(device)
-        attacker = DiffWMAttacker(attack_pipe, noise_step=args.diff_attack_steps, captions={})
-    if args.attack_type == "vae":
-        attacker = VAEWMAttacker(args.vae_attack_name, quality=args.vae_attack_quality, metric='mse', device=device)
+        if args.attack_type == "diff":
+            attack_pipe = ReSDPipeline.from_pretrained("stabilityai/stable-diffusion-2-1", torch_dtype=torch.float16, revision="fp16")
+            attack_pipe.set_progress_bar_config(disable=True)
+            attack_pipe.to(device)
+            attacker = DiffWMAttacker(attack_pipe, noise_step=args.diff_attack_steps, captions={})
+        if args.attack_type == "vae":
+            attacker = VAEWMAttacker(args.vae_attack_name, quality=args.vae_attack_quality, metric='mse', device=device)
 
     for i in tqdm(range(args.start, args.end)):
         seed = i + args.gen_seed
