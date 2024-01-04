@@ -263,7 +263,7 @@ if __name__ == '__main__':
     parser.add_argument('--attack_type', default='diff')
     parser.add_argument('--diff_attack_steps', default=60, type=int)
     parser.add_argument('--vae_attack_name', default='cheng2020-anchor')
-    parser.add_argument('--vae_attack_quality')
+    parser.add_argument('--vae_attack_quality', default=3, type=int)
 
     args = parser.parse_args()
 
