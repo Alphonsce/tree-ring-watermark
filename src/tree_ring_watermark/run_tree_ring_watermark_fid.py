@@ -159,6 +159,9 @@ def main(args):
 
     num_workers = min(num_cpus, 8) if num_cpus is not None else 0
 
+    ori_img_paths = glob.glob(os.path.join(no_w_dir, '*.*'))
+    ori_img_paths = sorted([path for path in ori_img_paths if path.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.gif'))])
+
     if args.use_attack:
         if args.attack_type == "diff":
             attack_pipe = ReSDPipeline.from_pretrained("stabilityai/stable-diffusion-2-1", torch_dtype=torch.float16, revision="fp16")
@@ -212,8 +215,6 @@ def main(args):
         # w_dir - это wm_path
         # att_w_dir - это att_path
         os.makedirs(w_dir, exist_ok=True)
-        ori_img_paths = glob.glob(os.path.join(no_w_dir, '*.*'))
-        ori_img_paths = sorted([path for path in ori_img_paths if path.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.gif'))])
         clean_psnr_list = []
         clean_ssim_list = []        
 
