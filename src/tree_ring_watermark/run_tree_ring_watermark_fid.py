@@ -66,8 +66,8 @@ def main(args):
         dataset = dataset['annotations']
         prompt_key = 'caption'
     
-    no_w_dir = f'fid_outputs/coco/{args.run_name}/no_w_gen'
-    w_dir = f'fid_outputs/coco/{args.run_name}/w_gen'
+    no_w_dir = args.no_w_dir
+    w_dir = args.w_dir
     os.makedirs(no_w_dir, exist_ok=True)
     os.makedirs(w_dir, exist_ok=True)
 
@@ -184,10 +184,12 @@ if __name__ == '__main__':
     parser.add_argument('--max_num_log_image', default=100, type=int)
     parser.add_argument('--run_no_w', action='store_true')
     parser.add_argument('--gen_seed', default=0, type=int)
+
     parser.add_argument('--prompt_file', default='fid_outputs/coco/meta_data.json')
     parser.add_argument('--gt_folder', default='fid_outputs/coco/ground_truth')
+    parser.add_argument('--no_w_dir', default='/data/varlamov_a_data/dima/fid_outputs/coco/fid_run/no_w_gen')
+    parser.add_argument('--w_dir', default='/data/varlamov_a_data/dima/fid_outputs/coco/fid_run/w_gen')
 
-    parser.add_argument('--freq_log', default=5000, type=int)
     parser.add_argument('--run_generation', action='store_true')
 
     # watermark
