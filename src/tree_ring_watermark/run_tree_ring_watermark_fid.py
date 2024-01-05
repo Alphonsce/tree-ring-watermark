@@ -159,7 +159,7 @@ def main(args):
 
     num_workers = min(num_cpus, 8) if num_cpus is not None else 0
 
-    if use_attack:
+    if args.use_attack:
         if args.attack_type == "diff":
             attack_pipe = ReSDPipeline.from_pretrained("stabilityai/stable-diffusion-2-1", torch_dtype=torch.float16, revision="fp16")
             attack_pipe.set_progress_bar_config(disable=True)
