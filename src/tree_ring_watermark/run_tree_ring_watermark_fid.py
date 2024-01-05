@@ -170,7 +170,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='diffusion watermark')
-    parser.add_argument('--project_name', default='watermark_attacks'
+    parser.add_argument('--project_name', default='watermark_attacks')
     parser.add_argument('--run_name', default='test')
     parser.add_argument('--start', default=0, type=int)
     parser.add_argument('--end', default=10, type=int)
