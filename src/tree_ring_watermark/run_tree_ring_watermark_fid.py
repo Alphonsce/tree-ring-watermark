@@ -4,13 +4,23 @@ import copy
 from tqdm import tqdm
 import json
 
+from PIL import Image 
+import PIL
+import sys
 import torch
+import os
+import glob
+import numpy as np
 
 from .inverse_stable_diffusion import InversableStableDiffusionPipeline
 from diffusers import DPMSolverMultistepScheduler
 from .optim_utils import *
 from .io_utils import *
 from .pytorch_fid.fid_score import *
+
+from wm_attacks import ReSDPipeline
+
+from wm_attacks.wmattacker_with_saving import DiffWMAttacker, VAEWMAttacker
 
 import math
 from pytorch_msssim import ssim
@@ -66,8 +76,12 @@ def main(args):
         dataset = dataset['annotations']
         prompt_key = 'caption'
     
-    no_w_dir = args.no_w_dir
-    w_dir = args.w_dir
+    no_w_dir = args.image_folder + '/no_w_gen'
+    w_dir = args.image_folder + '/w_gen'
+    if args.attack_type == 'diff':
+        att_w_dir = args.image_folder + f'/diff_{args.diff_attack_steps}' 
+    if args.attack_type == 'vae':
+        att_w_dir = args.image_folder + f'/{args.vae_attack_name}_{args.vae_attack_quality}'
     os.makedirs(no_w_dir, exist_ok=True)
     os.makedirs(w_dir, exist_ok=True)
 
@@ -145,9 +159,31 @@ def main(args):
 
     num_workers = min(num_cpus, 8) if num_cpus is not None else 0
 
+    if use_attack:
+        if args.attack_type == "diff":
+            attack_pipe = ReSDPipeline.from_pretrained("stabilityai/stable-diffusion-2-1", torch_dtype=torch.float16, revision="fp16")
+            attack_pipe.set_progress_bar_config(disable=True)
+            attack_pipe.to(device)
+            attacker = DiffWMAttacker(attack_pipe, noise_step=args.diff_attack_steps, batch_size=5, captions={})
+        if args.attack_type == "vae":
+            attacker = VAEWMAttacker(args.vae_attack_name, quality=args.vae_attack_quality, metric='mse', device=device)
+
+        wm_img_paths = []
+        att_img_paths = []
+        os.makedirs(os.path.join(att_w_dir), exist_ok=True)
+        for ori_img_path in ori_img_paths:
+            img_name = os.path.basename(ori_img_path)
+            wm_img_paths.append(os.path.join(w_dir, img_name))
+            att_img_paths.append(os.path.join(att_w_dir, img_name))
+        attacker.attack(wm_img_paths, att_img_paths)
+
     # fid for no_w
+    target_folder = args.gt_folder
+    if args.target_clean_generated:
+        target_folder = no_w_dir
+
     if args.run_no_w:
-        fid_value_no_w = calculate_fid_given_paths([args.gt_folder, no_w_dir],
+        fid_value_no_w = calculate_fid_given_paths([target_folder, no_w_dir],
                                             50,
                                             device,
                                             2048,
@@ -156,15 +192,76 @@ def main(args):
         fid_value_no_w = None
 
     # fid for w
-    fid_value_w = calculate_fid_given_paths([args.gt_folder, w_dir],
+    fid_value_w = calculate_fid_given_paths([target_folder, w_dir],
                                         50,
                                         device,
                                         2048,
                                         num_workers)
 
+    # fid for att_w
+    if args.use_attack:
+        fid_value_w = calculate_fid_given_paths([target_folder, att_w_dir],
+                                            50,
+                                            device,
+                                            2048,
+                                            num_workers)    
+
+    # psnr and ssim
+    if args.additional_metrics:
+        # no_w_dir - это orig_path
+        # w_dir - это wm_path
+        # att_w_dir - это att_path
+        os.makedirs(w_dir, exist_ok=True)
+        ori_img_paths = glob.glob(os.path.join(no_w_dir, '*.*'))
+        ori_img_paths = sorted([path for path in ori_img_paths if path.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.gif'))])
+        clean_psnr_list = []
+        clean_ssim_list = []        
+
+        wm_psnr_list = []
+        wm_ssim_list = []
+
+        att_psnr_list = []
+        att_ssim_list = []
+
+        for ori_img_path in tqdm(ori_img_paths):
+            img_name = os.path.basename(ori_img_path)
+            wm_img_path = os.path.join(w_dir, img_name)
+            att_img_path = os.path.join(att_w_dir, img_name)
+            target_image_path = os.path.join(target_folder, img_name)
+
+            clean_psnr, clean_ssim = eval_psnr_ssim_msssim(target_image_path, ori_img_path)
+            clean_psnr_list.append(clean_psnr)
+            clean_ssim_list.append(clean_ssim)
+
+            wm_psnr, wm_ssim = eval_psnr_ssim_msssim(target_image_path, wm_img_path)
+            wm_psnr_list.append(wm_psnr)
+            wm_ssim_list.append(wm_ssim)
+
+            att_psnr, att_ssim = eval_psnr_ssim_msssim(target_image_path, att_img_path)
+            att_psnr_list.append(att_psnr)
+            att_ssim_list.append(att_ssim)
+
+        clean_psnr = np.array(clean_psnr_list).mean()
+        clean_ssim = np.array(clean_ssim_list).mean()
+        wm_psnr = np.array(wm_psnr_list).mean()
+        wm_ssim = np.array(wm_ssim_list).mean()
+        att_psnr = np.array(att_psnr_list).mean()
+        att_ssim = np.array(att_ssim_list).mean()
+
     if args.with_tracking:
         wandb.log({'Table': table})
-        wandb.log({'fid_no_w': fid_value_no_w, 'fid_w': fid_value_w})
+        metrics_table = {'fid_no_w': fid_value_no_w, 'fid_w': fid_value_w}
+        if args.use_attack:
+            metrics_table['fid_att_w'] = fid_value_w
+        if args.additional_metrics:
+            metrics_table['psnr_no_w'] = clean_psnr
+            metrics_table['ssim_no_w'] = clean_ssim
+            metrics_table['psnr_w'] = wm_psnr
+            metrics_table['ssim_w'] = wm_ssim
+        if args.use_attack:
+            metrics_table['psnr_att_w'] = att_psnr
+            metrics_table['ssim_att_w'] = att_ssim
+        wandb.log(metrics_table)
 
     print(f'fid_no_w: {fid_value_no_w}, fid_w: {fid_value_w}')
 
@@ -185,12 +282,14 @@ if __name__ == '__main__':
     parser.add_argument('--run_no_w', action='store_true')
     parser.add_argument('--gen_seed', default=0, type=int)
 
-    parser.add_argument('--prompt_file', default='fid_outputs/coco/meta_data.json')
-    parser.add_argument('--gt_folder', default='fid_outputs/coco/ground_truth')
-    parser.add_argument('--no_w_dir', default='/data/varlamov_a_data/dima/fid_outputs/coco/fid_run/no_w_gen')
-    parser.add_argument('--w_dir', default='/data/varlamov_a_data/dima/fid_outputs/coco/fid_run/w_gen')
+    parser.add_argument('--prompt_file', default='/data/varlamov_a_data/dima/fid_outputs/coco/meta_data.json')
+    parser.add_argument('--gt_folder', default='/data/varlamov_a_data/dima/fid_outputs/coco/ground_truth')
+    parser.add_argument('--image_folder', default='/data/varlamov_a_data/dima/fid_outputs/coco/fid_run')
+    # Compute metrics with gen_no_w and gen_w:
+    parser.add_argument('--target_clean_generated', action='store_true')
 
     parser.add_argument('--run_generation', action='store_true')
+    parser.add_argument('--additional_metrics', action='store_true')
 
     # watermark
     parser.add_argument('--w_seed', default=999999, type=int)
@@ -201,6 +300,14 @@ if __name__ == '__main__':
     parser.add_argument('--w_measurement', default='l1_complex')
     parser.add_argument('--w_injection', default='complex')
     parser.add_argument('--w_pattern_const', default=0, type=float)
+
+    # VAE or Diff attack
+    parser.add_argument('--use_attack', action='store_true')
+    parser.add_argument('--attack_type', default='diff')
+    parser.add_argument('--use_attack_prompt', action='store_true')
+    parser.add_argument('--diff_attack_steps', default=60, type=int)
+    parser.add_argument('--vae_attack_name', default='cheng2020-anchor')
+    parser.add_argument('--vae_attack_quality', default=3, type=int)
 
     args = parser.parse_args()
     
