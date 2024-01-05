@@ -12,11 +12,38 @@ from .optim_utils import *
 from .io_utils import *
 from .pytorch_fid.fid_score import *
 
+import math
+from pytorch_msssim import ssim
+
+def compute_psnr(a, b):
+    mse = torch.mean((a - b) ** 2).item()
+    if mse == 0:
+        return 100
+    return -10 * math.log10(mse)
+
+
+def compute_msssim(a, b):
+    return ms_ssim(a, b, data_range=1.).item()
+
+
+def compute_ssim(a, b):
+    return ssim(a, b, data_range=1.).item()
+
+
+def eval_psnr_ssim_msssim(ori_img_path, new_img_path):
+    ori_img = Image.open(ori_img_path).convert('RGB')
+    new_img = Image.open(new_img_path).convert('RGB')
+    if ori_img.size != new_img.size:
+        new_img = new_img.resize(ori_img.size)
+    ori_x = transforms.ToTensor()(ori_img).unsqueeze(0)
+    new_x = transforms.ToTensor()(new_img).unsqueeze(0)
+    return compute_psnr(ori_x, new_x), compute_ssim(ori_x, new_x)
+
 
 def main(args):
     table = None
     if args.with_tracking:
-        wandb.init(project='diffusion_watermark', name=args.run_name, tags=['tree_ring_watermark_fid'])
+        wandb.init(project=args.project_name, name=args.run_name, tags=['tree_ring_watermark_fid'])
         wandb.config.update(args)
         table = wandb.Table(columns=['gen_no_w', 'gen_w', 'prompt'])
     
@@ -110,40 +137,40 @@ def main(args):
         orig_image_w.save(f'{w_dir}/{image_file_name}')
 
     ### calculate fid
-        if (i - args.start) % args.freq_log == 0 and i > args.freq_log - 1:
-            try:
-                num_cpus = len(os.sched_getaffinity(0))
-            except AttributeError:
-                num_cpus = os.cpu_count()
+    try:
+        num_cpus = len(os.sched_getaffinity(0))
+    except AttributeError:
+        num_cpus = os.cpu_count()
 
-            num_workers = min(num_cpus, 8) if num_cpus is not None else 0
+    num_workers = min(num_cpus, 8) if num_cpus is not None else 0
 
-            # fid for no_w
-            if args.run_no_w:
-                fid_value_no_w = calculate_fid_given_paths([args.gt_folder, no_w_dir],
-                                                    50,
-                                                    device,
-                                                    2048,
-                                                    num_workers)
-            else:
-                fid_value_no_w = None
+    # fid for no_w
+    if args.run_no_w:
+        fid_value_no_w = calculate_fid_given_paths([args.gt_folder, no_w_dir],
+                                            50,
+                                            device,
+                                            2048,
+                                            num_workers)
+    else:
+        fid_value_no_w = None
 
-            # fid for w
-            fid_value_w = calculate_fid_given_paths([args.gt_folder, w_dir],
-                                                50,
-                                                device,
-                                                2048,
-                                                num_workers)
+    # fid for w
+    fid_value_w = calculate_fid_given_paths([args.gt_folder, w_dir],
+                                        50,
+                                        device,
+                                        2048,
+                                        num_workers)
 
-            if args.with_tracking:
-                wandb.log({'Table': table})
-                wandb.log({'fid_no_w': fid_value_no_w, 'fid_w': fid_value_w})
+    if args.with_tracking:
+        wandb.log({'Table': table})
+        wandb.log({'fid_no_w': fid_value_no_w, 'fid_w': fid_value_w})
 
-            print(f'fid_no_w: {fid_value_no_w}, fid_w: {fid_value_w}')
+    print(f'fid_no_w: {fid_value_no_w}, fid_w: {fid_value_w}')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='diffusion watermark')
+    parser.add_argument('--project_name', default='watermark_attacks'
     parser.add_argument('--run_name', default='test')
     parser.add_argument('--start', default=0, type=int)
     parser.add_argument('--end', default=10, type=int)
