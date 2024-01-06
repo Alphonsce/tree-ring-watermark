@@ -203,7 +203,7 @@ def main(args):
 
     # fid for att_w
     if args.use_attack:
-        fid_value_w = calculate_fid_given_paths([target_folder, att_w_dir],
+        fid_value_w_att = calculate_fid_given_paths([target_folder, att_w_dir],
                                             50,
                                             device,
                                             2048,
@@ -253,7 +253,7 @@ def main(args):
         wandb.log({'Table': table})
         metrics_table = {'fid_no_w': fid_value_no_w, 'fid_w': fid_value_w}
         if args.use_attack:
-            metrics_table['fid_att_w'] = fid_value_w
+            metrics_table['fid_att_w'] = fid_value_w_att
         if args.additional_metrics:
             metrics_table['psnr_no_w'] = clean_psnr
             metrics_table['ssim_no_w'] = clean_ssim
