@@ -192,7 +192,10 @@ def main(args):
                 else:
                     table.add_data(wandb.Image(orig_image_no_w), w_no_sim, wandb.Image(orig_image_w), w_sim, current_prompt, no_w_metric, w_metric)
             else:
-                table.add_data(None, w_no_sim, None, w_sim, current_prompt, no_w_metric, w_metric)
+                if args.use_attack:
+                    table.add_data(None, w_no_sim, None, w_sim, None, current_prompt, no_w_metric, w_metric)
+                else:
+                    table.add_data(None, w_no_sim, None, w_sim, current_prompt, no_w_metric, w_metric)
 
             clip_scores.append(w_no_sim)
             clip_scores_w.append(w_sim)
