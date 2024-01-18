@@ -151,6 +151,9 @@ def get_watermarking_mask(init_latents_w, args, device):
 
 
 def get_watermarking_pattern(pipe, args, device, shape=None):
+    '''
+    Creates elements of gt_patch array
+    '''
     set_random_seed(args.w_seed)
     if shape is not None:
         gt_init = torch.randn(*shape, device=device)
@@ -194,6 +197,9 @@ def get_watermarking_pattern(pipe, args, device, shape=None):
 
 
 def inject_watermark(init_latents_w, watermarking_mask, gt_patch, args):
+    '''
+    Injects gt_patch elements into watermarking_mask indexes
+    '''
     init_latents_w_fft = torch.fft.fftshift(torch.fft.fft2(init_latents_w), dim=(-1, -2))
     if args.w_injection == 'complex':
         init_latents_w_fft[watermarking_mask] = gt_patch[watermarking_mask].clone()
@@ -209,6 +215,9 @@ def inject_watermark(init_latents_w, watermarking_mask, gt_patch, args):
 
 
 def eval_watermark(reversed_latents_no_w, reversed_latents_w, watermarking_mask, gt_patch, args):
+    '''
+    Compares values on watermarking_mask indexes in fourier space of image with gt_patch
+    '''
     if 'complex' in args.w_measurement:
         reversed_latents_no_w_fft = torch.fft.fftshift(torch.fft.fft2(reversed_latents_no_w), dim=(-1, -2))
         reversed_latents_w_fft = torch.fft.fftshift(torch.fft.fft2(reversed_latents_w), dim=(-1, -2))
