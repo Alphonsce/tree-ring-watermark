@@ -260,3 +260,27 @@ def get_p_value(reversed_latents_no_w, reversed_latents_w, watermarking_mask, gt
     p_w = scipy.stats.ncx2.cdf(x=x_w, df=len(target_patch), nc=lambda_w)
 
     return p_no_w, p_w
+
+def compute_psnr(a, b):
+    mse = torch.mean((a - b) ** 2).item()
+    if mse == 0:
+        return 100
+    return -10 * math.log10(mse)
+
+
+def compute_msssim(a, b):
+    return ms_ssim(a, b, data_range=1.).item()
+
+
+def compute_ssim(a, b):
+    return ssim(a, b, data_range=1.).item()
+
+
+def eval_psnr_ssim_msssim(ori_img_path, new_img_path):
+    ori_img = Image.open(ori_img_path).convert('RGB')
+    new_img = Image.open(new_img_path).convert('RGB')
+    if ori_img.size != new_img.size:
+        new_img = new_img.resize(ori_img.size)
+    ori_x = transforms.ToTensor()(ori_img).unsqueeze(0)
+    new_x = transforms.ToTensor()(new_img).unsqueeze(0)
+    return compute_psnr(ori_x, new_x), compute_ssim(ori_x, new_x)
