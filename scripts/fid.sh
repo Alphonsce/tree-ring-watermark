@@ -1,10 +1,11 @@
+for RUN in 1 2 3; do
 accelerate launch -m tree_ring_watermark.run_tree_ring_watermark_fid \
-  --project_name image_quality \
-  --run_name fid_new \
+  --project_name fid_gen_no_att_$RUN \
+  --run_name fid_gen \
   --w_channel 3 \
   --w_pattern ring \
   --start 0 --end 5000 \
   --with_tracking \
   --run_no_w \
-  --prompt_file /data/varlamov_a_data/dima/fid_outputs/coco/meta_data.json \
-  --gt_folder /data/varlamov_a_data/dima/fid_outputs/coco/ground_truth
+  --target_clean_generated
+done
