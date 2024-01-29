@@ -32,6 +32,8 @@ from .io_utils import *
 from .utils_st_sig import *
 
 def main(args):
+    print(args.decoder_state_dict_path)
+
     table = None
     if args.with_tracking:
         wandb.init(project=args.project_name, name=args.run_name, tags=['tree_ring_watermark'])
@@ -53,7 +55,7 @@ def main(args):
         )
     pipe = pipe.to(device)
 
-    pipe = change_pipe_vae_decoder(pipe, args.decoder_state_dict_path)
+    pipe = change_pipe_vae_decoder(pipe, weights_path=args.decoder_state_dict_path)
 
     # reference model
     if args.reference_model is not None:
@@ -278,7 +280,7 @@ if __name__ == '__main__':
     parser.add_argument('--vae_attack_quality', default=3, type=int)
 
     # Stable-Tree
-    parser.add_argument('--decoder_state_dict_path', default='/data/varlamov_a_data/dima/sd2_decoder.pth')
+    parser.add_argument('--decoder_state_dict_path', default='/data/varlamov_a_data/tree-ring-watermark/stable_signature/sd/v2-1_768-ema-pruned.ckpt')
 
     args = parser.parse_args()
 

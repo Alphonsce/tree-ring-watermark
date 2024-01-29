@@ -149,9 +149,16 @@ def load_model_from_config(config, ckpt, verbose=False):
     return model
 
 
-def change_pipe_vae_decoder(pipe, decoder_state_dict_path):
-    ldm_config = "sd/stable-diffusion-2-1-base/v2-inference.yaml"
-    ldm_ckpt = "sd/stable-diffusion-2-1-base/v2-1_512-ema-pruned.ckpt"
+def change_pipe_vae_decoder(pipe,
+    weights_path
+    config_path="/data/varlamov_a_data/tree-ring-watermark/stable_signature/sd/v2-inference.yaml",
+    ):
+    '''
+    - loads dict of weights into predefined vae config 
+    - changes pipe.vae.decode function into decoding with this vae
+    '''
+    ldm_config = config_path
+    ldm_ckpt = weights_path
 
     print(f'>>> Building LDM model with config {ldm_config} and weights from {ldm_ckpt}...')
     config = OmegaConf.load(f"{ldm_config}")
@@ -161,7 +168,7 @@ def change_pipe_vae_decoder(pipe, decoder_state_dict_path):
     ldm_aef.eval()
 
     # loading the fine-tuned decoder weights
-    state_dict = torch.load(decoder_state_dict_path)
+    state_dict = torch.load(weights_path)
     unexpected_keys = ldm_aef.load_state_dict(state_dict, strict=False)
     print(unexpected_keys)
     print("you should check that the decoder keys are correctly matched")
