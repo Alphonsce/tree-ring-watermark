@@ -149,7 +149,7 @@ def load_model_from_config(config, ckpt, verbose=False):
     return model
 
 
-def change_pipe_vae_decoder(pipe, ldm, decoder_state_dict_path):
+def change_pipe_vae_decoder(pipe, decoder_state_dict_path):
     ldm_config = "sd/stable-diffusion-2-1-base/v2-inference.yaml"
     ldm_ckpt = "sd/stable-diffusion-2-1-base/v2-1_512-ema-pruned.ckpt"
 
@@ -157,7 +157,7 @@ def change_pipe_vae_decoder(pipe, ldm, decoder_state_dict_path):
     config = OmegaConf.load(f"{ldm_config}")
     ldm_ae = load_model_from_config(config, ldm_ckpt)
 
-    ldm_aef = ldm.first_stage_model
+    ldm_aef = ldm_ae.first_stage_model
     ldm_aef.eval()
 
     # loading the fine-tuned decoder weights
