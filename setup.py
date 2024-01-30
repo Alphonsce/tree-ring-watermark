@@ -19,7 +19,7 @@ from setuptools import find_packages, setup
 # 1. all dependencies should be listed here with their version requirements if any
 # 2. once modified, run: `make deps_table_update` to update src/tree-ring-watermark/dependency_versions_table.py
 _deps = [
-   "torch==1.13.0",
+#    "torch==1.13.0",
    "transformers==4.31.0",
    "diffusers==0.14.0",
 ]
@@ -92,7 +92,7 @@ extras = {}
 
 
 install_requires = [
-    deps["torch"],
+    # deps["torch"],
     deps["diffusers"],
     deps["transformers"],
 ]
