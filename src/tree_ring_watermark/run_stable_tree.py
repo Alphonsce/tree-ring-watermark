@@ -56,6 +56,7 @@ def main(args):
     pipe = pipe.to(device)
 
     pipe = change_pipe_vae_decoder(pipe, weights_path=args.decoder_state_dict_path)
+    print("VAE CHANGED!")
 
     # reference model
     if args.reference_model is not None:
@@ -280,7 +281,7 @@ if __name__ == '__main__':
     parser.add_argument('--vae_attack_quality', default=3, type=int)
 
     # Stable-Tree
-    parser.add_argument('--decoder_state_dict_path', default='/data/varlamov_a_data/tree-ring-watermark/stable_signature/sd/v2-1_768-ema-pruned.ckpt')
+    parser.add_argument('--decoder_state_dict_path', default='/data/varlamov_a_data/tree-ring-watermark/stable_signature/sd/v2-1_512-ema-pruned.ckpt')
 
     args = parser.parse_args()
 

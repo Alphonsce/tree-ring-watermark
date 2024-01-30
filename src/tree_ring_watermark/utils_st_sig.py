@@ -6,6 +6,8 @@ import torch.nn as nn
 
 from omegaconf import OmegaConf 
 
+from diffusers.models import AutoencoderKL
+
 ### Load HiDDeN models
 
 class ConvBNRelu(nn.Module):
@@ -124,18 +126,21 @@ def instantiate_from_config(config):
 
 def get_obj_from_str(string, reload=False):
     module, cls = string.rsplit(".", 1)
+    # module = "." + module
     if reload:
         module_imp = importlib.import_module(module)
         importlib.reload(module_imp)
-    return getattr(importlib.import_module(module, package=None), cls)
+    return getattr(importlib.import_module(module, package="tree_ring_watermark"), cls)
 
 def load_model_from_config(config, ckpt, verbose=False):
     print(f"Loading model from {ckpt}")
+
     pl_sd = torch.load(ckpt, map_location="cpu")
     if "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
     sd = pl_sd["state_dict"]
     model = instantiate_from_config(config.model)
+
     m, u = model.load_state_dict(sd, strict=False)
     if len(m) > 0 and verbose:
         print("missing keys:")
@@ -148,9 +153,16 @@ def load_model_from_config(config, ckpt, verbose=False):
     model.eval()
     return model
 
+class Sampler:
+    '''
+    Crutch to make decode(x).sample return x
+    '''
+    def __init__(self, x):
+        self.sample = x
+    
 
 def change_pipe_vae_decoder(pipe,
-    weights_path
+    weights_path,
     config_path="/data/varlamov_a_data/tree-ring-watermark/stable_signature/sd/v2-inference.yaml",
     ):
     '''
@@ -161,18 +173,26 @@ def change_pipe_vae_decoder(pipe,
     ldm_ckpt = weights_path
 
     print(f'>>> Building LDM model with config {ldm_config} and weights from {ldm_ckpt}...')
+
+    # ----------------
     config = OmegaConf.load(f"{ldm_config}")
     ldm_ae = load_model_from_config(config, ldm_ckpt)
 
     ldm_aef = ldm_ae.first_stage_model
     ldm_aef.eval()
+    ldm_aef = ldm_aef.half()
 
     # loading the fine-tuned decoder weights
     state_dict = torch.load(weights_path)
+    # print(
+    #     dir(state_dict)
+    # )
     unexpected_keys = ldm_aef.load_state_dict(state_dict, strict=False)
-    print(unexpected_keys)
-    print("you should check that the decoder keys are correctly matched")
+    # print(
+    #     unexpected_keys
+    # )
+    # print("you should check that the decoder keys are correctly matched")
 
-    pipe.vae.decode = (lambda x,  *args, **kwargs: ldm_aef.decode(x).unsqueeze(0))
+    pipe.vae.decode = (lambda x,  *args, **kwargs: Sampler(ldm_aef.decode(x)))  # здесь было еще .unsqueeze(0)
 
     return pipe

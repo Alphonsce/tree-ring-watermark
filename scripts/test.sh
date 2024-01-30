@@ -14,7 +14,7 @@
 #   --reference_model ViT-g-14 --reference_model_pretrain laion2b_s12b_b42k \
 #   --freq_log 15
 
-accelerate launch -m tree_ring_watermark.run_stable_tree \
+python -m tree_ring_watermark.run_stable_tree \
   --project_name stable_tree \
   --run_name first_test --w_channel 3 --w_pattern ring \
   --start 0 --end 2 \
