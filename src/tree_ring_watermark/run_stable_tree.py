@@ -33,9 +33,10 @@ from .stable_sig.utils_model import *
 
 def main(args):
     if args.save_locally:
-        if not os.path.exists(params.local_path + f"/imgs_no_w/img{i}.png"):
-            os.makedirs(args.local_path + f"/imgs_no_w/img{i}.png")
-            os.makedirs(args.local_path + f"/imgs_w/w_img{i}.png")
+        if not os.path.exists(params.local_path):
+            os.makedirs(args.local_path)
+            os.makedirs(args.local_path + f"/imgs_no_w/")
+            os.makedirs(args.local_path + f"/imgs_w/")
 
     table = None
     if args.with_tracking:
