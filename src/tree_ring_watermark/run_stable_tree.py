@@ -29,10 +29,13 @@ from .open_clip import create_model_and_transforms, get_tokenizer
 
 from .optim_utils import *
 from .io_utils import *
-from .utils_st_sig import *
+from .stable_sig.utils_model import *
 
 def main(args):
-    print(args.decoder_state_dict_path)
+    if args.save_locally:
+        if not os.path.exists(params.local_path + f"/imgs_no_w/img{i}.png"):
+            os.makedirs(args.local_path + f"/imgs_no_w/img{i}.png")
+            os.makedirs(args.local_path + f"/imgs_w/w_img{i}.png")
 
     table = None
     if args.with_tracking:
