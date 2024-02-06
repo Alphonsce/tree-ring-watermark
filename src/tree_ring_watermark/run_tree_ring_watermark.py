@@ -21,7 +21,7 @@ from .io_utils import *
 
 def main(args):
     if args.save_locally:
-        if not os.path.exists(params.local_path):
+        if not os.path.exists(args.local_path):
             os.makedirs(args.local_path)
             os.makedirs(args.local_path + f"/imgs_no_w/")
             os.makedirs(args.local_path + f"/imgs_w/")
