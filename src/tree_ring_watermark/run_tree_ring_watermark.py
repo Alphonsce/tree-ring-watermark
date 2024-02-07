@@ -169,7 +169,7 @@ def main(args):
             clip_scores_w.append(w_sim)
 
         # roc
-        if (i - args.start) % args.freq_log == 0 and i > args.freq_log - 1:
+        if (i - args.start) % args.freq_log == 0 and (i - args.start) > args.freq_log - 1:
             preds = no_w_metrics +  w_metrics
             t_labels = [0] * len(no_w_metrics) + [1] * len(w_metrics)
 
