@@ -21,9 +21,9 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.utils import save_image
 
-import utils
-import utils_img
-import utils_model
+import .stable_sig.utils
+import .stable_sig.utils_img
+import .stable_sig.utils_model
 
 # sys.path.append('src')
 from .ldm.models.autoencoder import AutoencoderKL
