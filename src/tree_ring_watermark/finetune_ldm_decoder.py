@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Callable, Iterable
 
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -89,6 +90,11 @@ def get_parser():
     aa("--output_dir", type=str, default="output/", help="Output directory for logs and images (Default: /output)")
     aa("--seed", type=int, default=0)
     aa("--debug", type=utils.bool_inst, default=False, help="Debug mode")
+
+    group = parser.add_argument_group('Additional parameters')
+    aa("--not_rand_key", action="store_true")
+    aa("--key_str", type=str, default='111010110101000001010111010011010100010000100111')
+    aa("--no_attacks", action="store_true")
 
     return parser
 
@@ -227,6 +233,8 @@ def main(params):
         print(f'\n>>> Creating key with {nbit} bits...')
         key = torch.randint(0, 2, (1, nbit), dtype=torch.float32, device=device)
         key_str = "".join([ str(int(ii)) for ii in key.tolist()[0]])
+        if params.not_rand_key:
+            key_str = params.key_str
         print(f'Key: {key_str}')
 
         # Copy the LDM decoder and finetune the copy
@@ -360,6 +368,12 @@ def val(data_loader: Iterable, ldm_ae: AutoencoderKL, ldm_decoder: AutoencoderKL
             'jpeg_80': lambda x: utils_img.jpeg_compress(x, 80),
             'jpeg_50': lambda x: utils_img.jpeg_compress(x, 50),
         }
+
+        if params.no_attacks:
+            attacks = {
+            'none': lambda x: x
+        }
+
         for name, attack in attacks.items():
             imgs_aug = attack(vqgan_to_imnet(imgs_w))
             decoded = msg_decoder(imgs_aug) # b c h w -> b k
@@ -380,6 +394,9 @@ def val(data_loader: Iterable, ldm_ae: AutoencoderKL, ldm_decoder: AutoencoderKL
             save_image(torch.clamp(utils_img.unnormalize_vqgan(imgs_d0),0,1), os.path.join(params.imgs_dir, f'{ii:03}_val_d0.png'), nrow=8)
             save_image(torch.clamp(utils_img.unnormalize_vqgan(imgs_w),0,1), os.path.join(params.imgs_dir, f'{ii:03}_val_w.png'), nrow=8)
     
+    # if params.with_tracking:
+    #     wandb_run.log({'Val_final': wandb.Table(dataframe=pd.Dataframe.from_dict(log_stats))})
+
     print("Averaged {} stats:".format('eval'), metric_logger)
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 

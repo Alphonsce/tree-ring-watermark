@@ -6,8 +6,11 @@ accelerate launch -m tree_ring_watermark.finetune_ldm_decoder --num_keys 1 \
   --val_dir /data/varlamov_a_data/tree-ring-watermark/tree_ring_imgs/val \
   --with_tracking \
   --project_name finetune_ldm_decoder \
-  --run_name test \
+  --run_name working_run \
   --output_dir /data/varlamov_a_data/tree-ring-watermark/finetune_ldm_decoder \
   --batch_size 4 \
-  --steps 200 \
-  --num_val_imgs 200
+  --steps 100 \
+  --num_val_imgs 200 \
+  --not_rand_key \
+  --num_keys 3 \
+  --no_attacks
