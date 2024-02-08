@@ -21,9 +21,19 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.utils import save_image
 
-import .stable_sig.utils
-import .stable_sig.utils_img
-import .stable_sig.utils_model
+# import .stable_sig.utils
+# import .stable_sig.utils_img
+# import .stable_sig.utils_model
+
+import importlib
+
+def import_from_stable_sig(name):
+    module = importlib.import_module(".stable_sig." + name, package=__package__)
+    return module
+
+utils = import_from_stable_sig("utils")
+utils_img = import_from_stable_sig("utils_img")
+utils_model = import_from_stable_sig("utils_model")
 
 # sys.path.append('src')
 from .ldm.models.autoencoder import AutoencoderKL
@@ -65,6 +75,7 @@ def get_parser():
     aa("--optimizer", type=str, default="AdamW,lr=5e-4", help="Optimizer and learning rate for training")
     aa("--steps", type=int, default=100, help="Number of steps to train the model for")
     aa("--warmup_steps", type=int, default=20, help="Number of warmup steps for the optimizer")
+    aa("--num_val_imgs", type=int, default=200, help="Number of images for validation") 
 
     group = parser.add_argument_group('Logging and saving freq. parameters')
     aa("--log_freq", type=int, default=10, help="Logging frequency (in steps)")
@@ -177,7 +188,7 @@ def main(params):
         utils_img.normalize_vqgan,
     ])
     train_loader = utils.get_dataloader(params.train_dir, vqgan_transform, params.batch_size, num_imgs=params.batch_size*params.steps, shuffle=True, num_workers=4, collate_fn=None)
-    val_loader = utils.get_dataloader(params.val_dir, vqgan_transform, params.batch_size*4, num_imgs=1000, shuffle=False, num_workers=4, collate_fn=None)
+    val_loader = utils.get_dataloader(params.val_dir, vqgan_transform, params.batch_size*4, num_imgs=params.num_val_imgs, shuffle=False, num_workers=4, collate_fn=None)
     vqgan_to_imnet = transforms.Compose([utils_img.unnormalize_vqgan, utils_img.normalize_img])
     
     # Create losses
@@ -251,7 +262,7 @@ def main(params):
             f.write(os.path.join(params.output_dir, f"checkpoint_{ii_key:03d}.pth") + "\t" + key_str + "\n")
         print('\n')
 
-def train(data_loader: Iterable, optimizer: torch.optim.Optimizer, loss_w: Callable, loss_i: Callable, ldm_ae: AutoencoderKL, ldm_decoder:AutoencoderKL, msg_decoder: nn.Module, vqgan_to_imnet:nn.Module, key: torch.Tensor, params: argparse.Namespace, wandb_run: wandb.Run):
+def train(data_loader: Iterable, optimizer: torch.optim.Optimizer, loss_w: Callable, loss_i: Callable, ldm_ae: AutoencoderKL, ldm_decoder:AutoencoderKL, msg_decoder: nn.Module, vqgan_to_imnet:nn.Module, key: torch.Tensor, params: argparse.Namespace, wandb_run: wandb.run):
     header = 'Train'
     metric_logger = utils.MetricLogger(delimiter="  ")
     ldm_decoder.decoder.train()
@@ -315,7 +326,7 @@ def train(data_loader: Iterable, optimizer: torch.optim.Optimizer, loss_w: Calla
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
 @torch.no_grad()
-def val(data_loader: Iterable, ldm_ae: AutoencoderKL, ldm_decoder: AutoencoderKL, msg_decoder: nn.Module, vqgan_to_imnet:nn.Module, key: torch.Tensor, params: argparse.Namespace, wandb_run: wandb.Run):
+def val(data_loader: Iterable, ldm_ae: AutoencoderKL, ldm_decoder: AutoencoderKL, msg_decoder: nn.Module, vqgan_to_imnet:nn.Module, key: torch.Tensor, params: argparse.Namespace, wandb_run: wandb.run):
     header = 'Eval'
     metric_logger = utils.MetricLogger(delimiter="  ")
     ldm_decoder.decoder.eval()

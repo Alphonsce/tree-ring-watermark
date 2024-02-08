@@ -141,3 +141,5 @@ test.py
 test.sh
 
 *.pyc
+
+tree_ring_imgs
