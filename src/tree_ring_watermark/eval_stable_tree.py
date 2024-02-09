@@ -21,11 +21,13 @@ from torchvision import transforms
 from pytorch_fid.fid_score import InceptionV3, calculate_frechet_distance, compute_statistics_of_path
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
-import .stable_sig.utils
-import .stable_sig.utils_img
-import .stable_sig.utils_model
+import utils
+import utils_img
+import utils_model
 
-import wandb
+from wm_attacks import ReSDPipeline
+
+from wm_attacks.wmattacker_no_saving import DiffWMAttacker, VAEWMAttacker
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -229,6 +231,13 @@ def main(params):
         msg_decoder.eval()
         nbit = msg_decoder(torch.zeros(1, 3, 128, 128).to(device)).shape[-1]
 
+        attack_pipe = ReSDPipeline.from_pretrained("stabilityai/stable-diffusion-2-1", torch_dtype=torch.float16, revision="fp16")
+        attack_pipe.set_progress_bar_config(disable=True)
+        attack_pipe.to(device)
+        diff_attacker = DiffWMAttacker(attack_pipe, noise_step=150)
+        vae_2018_attacker = VAEWMAttacker("bmshj2018-factorized", quality=1, metric='mse', device=device)
+        vae_2020_attacker = VAEWMAttacker("cheng2020-anchor", quality=1, metric='mse', device=device)
+
         if params.attack_mode == 'all':
             attacks = {
                 'none': lambda x: x,
@@ -250,6 +259,9 @@ def main(params):
                 'resize_01': lambda x: utils_img.resize(x, 0.1),
                 'overlay_text': lambda x: utils_img.overlay_text(x, [76,111,114,101,109,32,73,112,115,117,109]),
                 'comb': lambda x: utils_img.jpeg_compress(utils_img.adjust_brightness(utils_img.center_crop(x, 0.5), 1.5), 80),
+                'diff_150': lambda x: diff_attacker.attack(x),
+                'vae_2018_1': lambda x: vae_2018_attacker.attack(x),
+                'vae_2020_1': lambda x: vae_2020_attacker.attack(x)
             }
         elif params.attack_mode == 'few':
             attacks = {
@@ -259,6 +271,9 @@ def main(params):
                 'contrast_2': lambda x: utils_img.adjust_contrast(x, 2),
                 'jpeg_50': lambda x: utils_img.jpeg_compress(x, 50),
                 'comb': lambda x: utils_img.jpeg_compress(utils_img.adjust_brightness(utils_img.center_crop(x, 0.5), 1.5), 80),
+                'diff_150': lambda x: diff_attacker.attack(x),
+                'vae_2018_1': lambda x: vae_2018_attacker.attack(x),
+                'vae_2020_1': lambda x: vae_2020_attacker.attack(x)
             }
         else:
             attacks = {'none': lambda x: x}
@@ -309,10 +324,6 @@ def get_parser():
     aa("--output_dir", type=str, default="output/", help="Output directory for logs and images, when doing eval images (Default: /output)")
     aa("--seed", type=int, default=0)
     aa("--debug", type=utils.bool_inst, default=False, help="Debug mode")
-
-    group = parser.add_argument_group('Wandb related')
-    aa('--project_name', default='watermark_attacks')
-    aa('--run_name', default='test')
 
     return parser
 
