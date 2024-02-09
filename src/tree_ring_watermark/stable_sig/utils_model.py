@@ -162,7 +162,7 @@ class Sampler:
     
 
 def change_pipe_vae_decoder(pipe,
-    weights_path
+    weights_path,
     ckpt_path='/data/varlamov_a_data/tree-ring-watermark/stable_signature/sd/v2-1_512-ema-pruned.ckpt',
     config_path="/data/varlamov_a_data/tree-ring-watermark/stable_signature/sd/v2-inference.yaml"
     ):
