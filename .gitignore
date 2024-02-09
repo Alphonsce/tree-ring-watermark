@@ -147,3 +147,5 @@ tree_ring_imgs
 __pycache__
 
 finetune_ldm_decoder
+
+*.pth
