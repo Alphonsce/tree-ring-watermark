@@ -26,8 +26,9 @@ import utils_img
 import utils_model
 
 from wm_attacks import ReSDPipeline
-
 from wm_attacks.wmattacker_no_saving import DiffWMAttacker, VAEWMAttacker
+
+import wandb
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -141,6 +142,11 @@ def get_msgs(img_dir: str, msg_decoder: nn.Module, batch_size: int = 16, attacks
     return log_stats
 
 def main(params):
+
+    if params.with_tracking:
+        wandb_run = wandb.init(project=params.project_name, name=params.run_name, tags=['tree_ring_watermark'])
+    else:
+        wandb_run = None
 
     # Set seeds for reproductibility 
     np.random.seed(params.seed)
@@ -288,7 +294,14 @@ def main(params):
         print(f'>>> Saving log stats to {params.output_dir}...')
         df = pd.DataFrame(log_stats)
         df.to_csv(os.path.join(params.output_dir, 'log_stats.csv'), index=False)
-        print(df)
+
+        df_mean = pd.DataFrame(df.mean()).transpose()
+        df_mean.to_csv(os.path.join(params.output_dir, 'mean_log_stats.csv'), index=False)
+        print(df_mean)
+
+        if params.with_tracking:
+            mean_table = wandb.Table(dataframe=df_mean)
+            wandb_run.log({"table_key": my_table})
 
 
 def get_parser():
@@ -324,6 +337,12 @@ def get_parser():
     aa("--output_dir", type=str, default="output/", help="Output directory for logs and images, when doing eval images (Default: /output)")
     aa("--seed", type=int, default=0)
     aa("--debug", type=utils.bool_inst, default=False, help="Debug mode")
+
+    group = parser.add_argument_group('Logging parameters')
+    aa('--with_tracking', action='store_true')
+    aa('--project_name', default='eval_stable_tree')
+    aa('--run_name', default='test')
+
 
     return parser
 
