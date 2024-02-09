@@ -162,15 +162,18 @@ class Sampler:
     
 
 def change_pipe_vae_decoder(pipe,
-    weights_path,
-    config_path="/data/varlamov_a_data/tree-ring-watermark/stable_signature/sd/v2-inference.yaml",
+    weights_path
+    ckpt_path='/data/varlamov_a_data/tree-ring-watermark/stable_signature/sd/v2-1_512-ema-pruned.ckpt',
+    config_path="/data/varlamov_a_data/tree-ring-watermark/stable_signature/sd/v2-inference.yaml"
     ):
     '''
     - loads dict of weights into predefined vae config 
     - changes pipe.vae.decode function into decoding with this vae
+    -------------
+    weights_path: path to weights of decoder
     '''
     ldm_config = config_path
-    ldm_ckpt = weights_path
+    ldm_ckpt = ckpt_path
 
     print(f'>>> Building LDM model with config {ldm_config} and weights from {ldm_ckpt}...')
 
