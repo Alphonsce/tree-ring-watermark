@@ -187,6 +187,8 @@ def change_pipe_vae_decoder(pipe,
 
     # loading the fine-tuned decoder weights
     state_dict = torch.load(weights_path)
+
+    print(f'>>> Loaded VAE decoder weights from {weights_path}')
     # print(
     #     dir(state_dict)
     # )
