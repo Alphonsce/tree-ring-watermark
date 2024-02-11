@@ -235,6 +235,8 @@ def main(params):
         key_str = "".join([ str(int(ii)) for ii in key.tolist()[0]])
         if params.not_rand_key:
             key_str = params.key_str
+            bit_list = [int(char) for char in key_str]
+            key = torch.tensor(bit_list, dtype=torch.float32, device=device)
         print(f'Key: {key_str}')
 
         # Copy the LDM decoder and finetune the copy
