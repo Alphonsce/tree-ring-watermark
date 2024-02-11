@@ -17,16 +17,27 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from torchvision import transforms
+from torchvision.transforms import ToPILImage
 
 from pytorch_fid.fid_score import InceptionV3, calculate_frechet_distance, compute_statistics_of_path
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
-import utils
-import utils_img
-import utils_model
+# import utils
+# import utils_img
+# import utils_model
+
+import importlib
+
+def import_from_stable_sig(name):
+    module = importlib.import_module(".stable_sig." + name, package=__package__)
+    return module
+
+utils = import_from_stable_sig("utils")
+utils_img = import_from_stable_sig("utils_img")
+utils_model = import_from_stable_sig("utils_model")
 
 from wm_attacks import ReSDPipeline
-from wm_attacks.wmattacker_no_saving import DiffWMAttacker, VAEWMAttacker
+from wm_attacks.wmattacker_no_saving import VAEWMAttacker, DiffWMAttacker
 
 import wandb
 
@@ -103,6 +114,7 @@ def get_bit_accs(img_dir: str, msg_decoder: nn.Module, key: torch.Tensor, batch_
 
         for name, attack in attacks.items():
             imgs_aug = attack(imgs)
+            # print(type(imgs_aug), imgs_aug.shape)
             decoded = msg_decoder(imgs_aug) # b c h w -> b k
             diff = (~torch.logical_xor(decoded>0, keys>0)) # b k -> b k
             bit_accs = torch.sum(diff, dim=-1) / diff.shape[-1] # b k -> b
@@ -237,12 +249,13 @@ def main(params):
         msg_decoder.eval()
         nbit = msg_decoder(torch.zeros(1, 3, 128, 128).to(device)).shape[-1]
 
-        attack_pipe = ReSDPipeline.from_pretrained("stabilityai/stable-diffusion-2-1", torch_dtype=torch.float16, revision="fp16")
-        attack_pipe.set_progress_bar_config(disable=True)
-        attack_pipe.to(device)
-        diff_attacker = DiffWMAttacker(attack_pipe, noise_step=150)
-        vae_2018_attacker = VAEWMAttacker("bmshj2018-factorized", quality=1, metric='mse', device=device)
-        vae_2020_attacker = VAEWMAttacker("cheng2020-anchor", quality=1, metric='mse', device=device)
+        # attack_pipe = ReSDPipeline.from_pretrained("stabilityai/stable-diffusion-2-1", torch_dtype=torch.float16, revision="fp16")
+        # attack_pipe.set_progress_bar_config(disable=True)
+        # attack_pipe.to(device)
+        # diff_attacker = DiffWMAttacker(attack_pipe, noise_step=150)
+        # vae_2018_attacker = VAEWMAttacker("bmshj2018-factorized", quality=1, metric='mse', device=device)
+        # vae_2020_attacker = VAEWMAttacker("cheng2020-anchor", quality=1, metric='mse', device=device)
+        # piller = ToPILImage()
 
         if params.attack_mode == 'all':
             attacks = {
@@ -265,9 +278,9 @@ def main(params):
                 'resize_01': lambda x: utils_img.resize(x, 0.1),
                 'overlay_text': lambda x: utils_img.overlay_text(x, [76,111,114,101,109,32,73,112,115,117,109]),
                 'comb': lambda x: utils_img.jpeg_compress(utils_img.adjust_brightness(utils_img.center_crop(x, 0.5), 1.5), 80),
-                'diff_150': lambda x: diff_attacker.attack(x),
-                'vae_2018_1': lambda x: vae_2018_attacker.attack(x),
-                'vae_2020_1': lambda x: vae_2020_attacker.attack(x)
+                # 'diff_150': lambda x: diff_attacker.attack(x.cpu()),
+                # 'vae_2018_1': lambda x: vae_2018_attacker.attack(piller(x.cpu())),
+                # 'vae_2020_1': lambda x: vae_2020_attacker.attack(piller(x.cpu()))
             }
         elif params.attack_mode == 'few':
             attacks = {
@@ -277,9 +290,9 @@ def main(params):
                 'contrast_2': lambda x: utils_img.adjust_contrast(x, 2),
                 'jpeg_50': lambda x: utils_img.jpeg_compress(x, 50),
                 'comb': lambda x: utils_img.jpeg_compress(utils_img.adjust_brightness(utils_img.center_crop(x, 0.5), 1.5), 80),
-                'diff_150': lambda x: diff_attacker.attack(x),
-                'vae_2018_1': lambda x: vae_2018_attacker.attack(x),
-                'vae_2020_1': lambda x: vae_2020_attacker.attack(x)
+                # 'diff_150': lambda x: diff_attacker.attack(x.cpu()),
+                # 'vae_2018_1': lambda x: vae_2018_attacker.attack(x.cpu()),
+                # 'vae_2020_1': lambda x: vae_2020_attacker.attack(x.cpu())
             }
         else:
             attacks = {'none': lambda x: x}
@@ -301,7 +314,7 @@ def main(params):
 
         if params.with_tracking:
             mean_table = wandb.Table(dataframe=df_mean)
-            wandb_run.log({"table_key": my_table})
+            wandb_run.log({"mean_values": df_mean})
 
 
 def get_parser():
