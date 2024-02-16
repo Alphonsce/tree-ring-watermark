@@ -127,6 +127,14 @@ def main(params):
     config = OmegaConf.load(f"{params.ldm_config}")
     ldm_ae: LatentDiffusion = utils_model.load_model_from_config(config, params.ldm_ckpt)
     ldm_ae: AutoencoderKL = ldm_ae.first_stage_model
+
+    # ------------
+    # weights_path = "/data/varlamov_a_data/tree-ring-watermark/ldm_decoders/authors.pth"
+    # print(f'>>> TESTING <<< \t >>> Loading VAE weights from {weights_path}')
+    # state_dict = torch.load(weights_path)
+    # unexpected_keys = ldm_ae.load_state_dict(state_dict, strict=False)
+    # ------------
+
     ldm_ae.eval()
     ldm_ae.to(device)
     
@@ -265,7 +273,11 @@ def main(params):
         }
 
         # Save checkpoint
-        torch.save(save_dict, os.path.join(params.output_dir, f"checkpoint_{ii_key:03d}.pth"))
+        # torch.save(save_dict, os.path.join(params.output_dir, f"checkpoint_{ii_key:03d}.pth"))
+        torch.save(ldm_decoder.state_dict(), os.path.join(params.output_dir, f"ldm_decoder_checkpoint_{ii_key:03d}.pth"))
+        torch.save(optimizer.state_dict(), os.path.join(params.output_dir, f"optimizer_checkpoint_{ii_key:03d}.pth"))
+        torch.save(params, os.path.join(params.output_dir, f"params_checkpoint_{ii_key:03d}.pth"))
+
         with (Path(params.output_dir) / "log.txt").open("a") as f:
             f.write(json.dumps(log_stats) + "\n")
         with (Path(params.output_dir) / "keys.txt").open("a") as f:
@@ -292,6 +304,11 @@ def train(data_loader: Iterable, optimizer: torch.optim.Optimizer, loss_w: Calla
 
         # extract watermark
         decoded = msg_decoder(vqgan_to_imnet(imgs_w)) # b c h w -> b k
+
+        print("-----------------")
+        print_decoded = (decoded > 0).to(int)
+        print_decoded = "".join([ str(int(ii)) for ii in print_decoded.tolist()[0]])
+        print(f'decoded: {print_decoded}')
 
         # compute loss
         lossw = loss_w(decoded, keys)
@@ -379,6 +396,12 @@ def val(data_loader: Iterable, ldm_ae: AutoencoderKL, ldm_decoder: AutoencoderKL
         for name, attack in attacks.items():
             imgs_aug = attack(vqgan_to_imnet(imgs_w))
             decoded = msg_decoder(imgs_aug) # b c h w -> b k
+            
+            print("-----------------")
+            print_decoded = (decoded > 0).to(int)
+            print_decoded = "".join([ str(int(ii)) for ii in print_decoded.tolist()[0]])
+            print(f'decoded: {print_decoded}')
+
             diff = (~torch.logical_xor(decoded>0, keys>0)) # b k -> b k
             bit_accs = torch.sum(diff, dim=-1) / diff.shape[-1] # b k -> b
             word_accs = (bit_accs == 1) # b
