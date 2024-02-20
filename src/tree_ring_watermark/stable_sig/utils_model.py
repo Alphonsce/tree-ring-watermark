@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from omegaconf import OmegaConf 
 
-from diffusers.models import AutoencoderKL
+# from diffusers.models import AutoencoderKL
 
 ### Load HiDDeN models
 
