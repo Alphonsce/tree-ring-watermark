@@ -149,3 +149,11 @@ __pycache__
 finetune_ldm_decoder
 
 *.pth
+
+logs_*
+
+*_logs
+
+*_imgs
+
+finetune_*
