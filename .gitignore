@@ -157,3 +157,5 @@ logs_*
 *_imgs
 
 finetune_*
+
+*.csv
