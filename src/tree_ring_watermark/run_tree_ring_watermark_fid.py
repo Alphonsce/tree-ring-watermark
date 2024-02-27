@@ -178,7 +178,8 @@ def main(args):
             img_name = os.path.basename(ori_img_path)
             wm_img_paths.append(os.path.join(w_dir, img_name))
             att_img_paths.append(os.path.join(att_w_dir, img_name))
-        attacker.attack(wm_img_paths, att_img_paths)
+        # using attacker on whole folder: we are using from with_saving file
+        attacker.attack(wm_img_paths, att_img_paths) 
 
     # fid for no_w
     target_folder = args.gt_folder
@@ -214,7 +215,6 @@ def main(args):
         # no_w_dir - это orig_path
         # w_dir - это wm_path
         # att_w_dir - это att_path
-        os.makedirs(w_dir, exist_ok=True)
         clean_psnr_list = []
         clean_ssim_list = []        
 
@@ -238,16 +238,18 @@ def main(args):
             wm_psnr_list.append(wm_psnr)
             wm_ssim_list.append(wm_ssim)
 
-            att_psnr, att_ssim = eval_psnr_ssim_msssim(target_image_path, att_img_path)
-            att_psnr_list.append(att_psnr)
-            att_ssim_list.append(att_ssim)
+            if args.use_attack:
+                att_psnr, att_ssim = eval_psnr_ssim_msssim(target_image_path, att_img_path)
+                att_psnr_list.append(att_psnr)
+                att_ssim_list.append(att_ssim)
 
         clean_psnr = np.array(clean_psnr_list).mean()
         clean_ssim = np.array(clean_ssim_list).mean()
         wm_psnr = np.array(wm_psnr_list).mean()
         wm_ssim = np.array(wm_ssim_list).mean()
-        att_psnr = np.array(att_psnr_list).mean()
-        att_ssim = np.array(att_ssim_list).mean()
+        if args.use_attack:
+            att_psnr = np.array(att_psnr_list).mean()
+            att_ssim = np.array(att_ssim_list).mean()
 
     if args.with_tracking:
         wandb.log({'Table': table})
@@ -278,7 +280,7 @@ if __name__ == '__main__':
     parser.add_argument('--with_tracking', action='store_true')
     parser.add_argument('--num_images', default=1, type=int)
     parser.add_argument('--guidance_scale', default=7.5, type=float)
-    parser.add_argument('--num_inference_steps', default=50, type=int)
+    parser.add_argument('--num_inference_steps', default=40, type=int)
     parser.add_argument('--max_num_log_image', default=100, type=int)
     parser.add_argument('--run_no_w', action='store_true')
     parser.add_argument('--gen_seed', default=0, type=int)
