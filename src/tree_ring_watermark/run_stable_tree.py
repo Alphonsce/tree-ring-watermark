@@ -210,9 +210,12 @@ def main(args):
             clip_scores.append(w_no_sim)
             clip_scores_w.append(w_sim)
 
+        print(
+            -mean(w_metrics)
+        )
         # roc
         if (i - args.start) % args.freq_log == 0 and (i - args.start) > args.freq_log - 1:
-            preds = no_w_metrics +  w_metrics
+            preds = no_w_metrics + w_metrics
             t_labels = [0] * len(no_w_metrics) + [1] * len(w_metrics)
 
             fpr, tpr, thresholds = metrics.roc_curve(t_labels, preds, pos_label=1)
@@ -224,7 +227,10 @@ def main(args):
                 wandb.log({'Table': table})
                 wandb.log({'clip_score_mean': mean(clip_scores), 'clip_score_std': stdev(clip_scores),
                         'w_clip_score_mean': mean(clip_scores_w), 'w_clip_score_std': stdev(clip_scores_w),
-                        'auc': auc, 'acc':acc, 'TPR@1%FPR': low})
+                        'auc': auc, 'acc':acc, 'TPR@1%FPR': low,
+                        'w_det_dist_mean': -mean(w_metrics), 'w_det_dist_std': stdev(w_metrics)
+                        'no_w_det_dist_mean': -mean(no_w_metrics), 'no_w_det_dist_std': stdev(no_w_metrics)
+                        })
     
             print(f'clip_score_mean: {mean(clip_scores)}')
             print(f'w_clip_score_mean: {mean(clip_scores_w)}')
@@ -286,6 +292,9 @@ if __name__ == '__main__':
 
     # Stable-Tree
     parser.add_argument('--decoder_state_dict_path', default='/data/varlamov_a_data/tree-ring-watermark/ldm_decoders/sd2_decoder.pth')
+
+    # Message encryption:
+    parser.add_argument('--msg_type', default='rand')
 
     args = parser.parse_args()
 

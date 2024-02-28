@@ -149,6 +149,9 @@ def get_watermarking_mask(init_latents_w, args, device):
 
     return watermarking_mask
 
+def create_message(args):
+    pass
+
 
 def get_watermarking_pattern(pipe, args, device, shape=None):
     '''
