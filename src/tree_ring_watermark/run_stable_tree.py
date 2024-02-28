@@ -228,7 +228,7 @@ def main(args):
                 wandb.log({'clip_score_mean': mean(clip_scores), 'clip_score_std': stdev(clip_scores),
                         'w_clip_score_mean': mean(clip_scores_w), 'w_clip_score_std': stdev(clip_scores_w),
                         'auc': auc, 'acc':acc, 'TPR@1%FPR': low,
-                        'w_det_dist_mean': -mean(w_metrics), 'w_det_dist_std': stdev(w_metrics)
+                        'w_det_dist_mean': -mean(w_metrics), 'w_det_dist_std': stdev(w_metrics),
                         'no_w_det_dist_mean': -mean(no_w_metrics), 'no_w_det_dist_std': stdev(no_w_metrics)
                         })
     
