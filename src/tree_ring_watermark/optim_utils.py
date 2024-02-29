@@ -153,13 +153,14 @@ class MsgLenError(Exception):
     "Raised, when len(args.msg) != args.w_radius"
     pass
 
-def encrypt_message(gt_patch, args):
+def encrypt_message(gt_init, args):
     '''
-    Inserts given message into Fourier space of image
+    Inserts given message into Fourier space of gaussian noise
     '''
     if len(args.msg) != args.w_radius:
         raise MsgLenError("Message length is not equal to watermark radius")
 
+    gt_patch = torch.fft.fftshift(torch.fft.fft2(gt_init), dim=(-1, -2))
     message = np.ones([4, args.w_radius])
 
     if args.msg_type == "rand":
@@ -221,9 +222,7 @@ def get_watermarking_pattern(pipe, args, device, shape=None):
         gt_patch = torch.fft.fftshift(torch.fft.fft2(gt_init), dim=(-1, -2)) * 0
         gt_patch += args.w_pattern_const
     elif 'ring' in args.w_pattern:
-        gt_patch = torch.fft.fftshift(torch.fft.fft2(gt_init), dim=(-1, -2))
-
-        gt_patch = encrypt_message(gt_patch, args)
+        gt_patch = encrypt_message(gt_init, args)
 
     return gt_patch
 
