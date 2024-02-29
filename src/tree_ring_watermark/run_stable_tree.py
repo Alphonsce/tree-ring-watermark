@@ -43,9 +43,13 @@ def main(args):
         wandb.init(project=args.project_name, name=args.run_name, tags=['tree_ring_watermark'])
         wandb.config.update(args)
         if args.use_attack:
-            table = wandb.Table(columns=['gen_no_w', 'no_w_clip_score', 'gen_w', 'w_clip_score', 'att_gen_w', 'prompt', 'no_w_metric', 'w_metric'])
+            columns = ['gen_no_w', 'no_w_clip_score', 'gen_w', 'w_clip_score', 'att_gen_w', 'prompt', 'no_w_metric', 'w_metric']
         else:
-            table = wandb.Table(columns=['gen_no_w', 'no_w_clip_score', 'gen_w', 'w_clip_score', 'prompt', 'no_w_metric', 'w_metric'])
+            columns = ['gen_no_w', 'no_w_clip_score', 'gen_w', 'w_clip_score', 'prompt', 'no_w_metric', 'w_metric']
+
+        if args.use_random_msgs:
+            columns.append('message')
+        table = wandb.Table(columns=columns)
     
     # load diffusion model
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -74,7 +78,8 @@ def main(args):
     text_embeddings = pipe.get_text_embedding(tester_prompt)
 
     # ground-truth patch
-    gt_patch = get_watermarking_pattern(pipe, args, device)
+    if not args.use_random_msgs:
+        gt_patch = get_watermarking_pattern(pipe, args, device)
 
     results = []
     clip_scores = []
@@ -83,7 +88,7 @@ def main(args):
     w_metrics = []
 
     bit_accs = []
-    word_accs = []
+    words_right = 0
 
     if args.use_attack:
         if args.attack_type == "diff":
@@ -98,6 +103,13 @@ def main(args):
         seed = i + args.gen_seed
         
         current_prompt = dataset[i][prompt_key]
+
+        if args.use_random_msgs:
+            msg_key = torch.randint(0, 2, (1, args.w_radius), dtype=torch.float32, device="cpu")
+            msg_str = "".join([ str(int(ii)) for ii in msg_key.tolist()[0]])
+
+        if args.use_random_msgs:
+            gt_patch = get_watermarking_pattern(pipe, args, device, message=msg_str)
         
         ### generation
         # generation without watermarking
@@ -178,6 +190,26 @@ def main(args):
         # eval
         no_w_metric, w_metric = eval_watermark(reversed_latents_no_w, reversed_latents_w, watermarking_mask, gt_patch, args)
 
+        # detect msg
+        if args.msg_type == "binary":
+            correct_bits_tmp = 0
+            if args.use_random_msgs:
+                true_msg_str = msg_str
+            else:
+                true_msg_str = args.msg
+
+            true_msg = np.array(list(map(lambda x: 1 if x == "1" else 0, list(true_msg_str))))
+            pred_msg = np.array(detect_msg(reversed_latents_w, args))
+            print(f"true msg: {true_msg}; pred_msg: {pred_msg}")
+
+            correct_bits_tmp = np.equal(true_msg, pred_msg).sum()
+
+            bit_accs.append(correct_bits_tmp / args.w_radius)
+
+            if correct_bits_tmp == args.w_radius:
+                words_right += 1
+
+
         if args.reference_model is not None:
             sims = measure_similarity([orig_image_no_w, orig_image_w], current_prompt, ref_model, ref_clip_preprocess, ref_tokenizer, device)
             w_no_sim = sims[0].item()
@@ -201,14 +233,19 @@ def main(args):
             if (args.reference_model is not None) and (i < args.max_num_log_image):
                 # log images when we use reference_model
                 if args.use_attack:
-                    table.add_data(wandb.Image(orig_image_no_w), w_no_sim, wandb.Image(orig_image_w), w_sim, wandb.Image(att_img_w), current_prompt, no_w_metric, w_metric)
+                    data_to_add = [wandb.Image(orig_image_no_w), w_no_sim, wandb.Image(orig_image_w), w_sim, wandb.Image(att_img_w), current_prompt, no_w_metric, w_metric]
                 else:
-                    table.add_data(wandb.Image(orig_image_no_w), w_no_sim, wandb.Image(orig_image_w), w_sim, current_prompt, no_w_metric, w_metric)
+                    data_to_add = [wandb.Image(orig_image_no_w), w_no_sim, wandb.Image(orig_image_w), w_sim, current_prompt, no_w_metric, w_metric]
             else:
                 if args.use_attack:
-                    table.add_data(None, w_no_sim, None, w_sim, None, current_prompt, no_w_metric, w_metric)
+                    data_to_add = [None, w_no_sim, None, w_sim, None, current_prompt, no_w_metric, w_metric]
                 else:
-                    table.add_data(None, w_no_sim, None, w_sim, current_prompt, no_w_metric, w_metric)
+                    data_to_add = [None, w_no_sim, None, w_sim, current_prompt, no_w_metric, w_metric]
+
+            if args.use_random_msgs:
+                data_to_add.append(msg_str)
+
+            table.add_data(*data_to_add)
 
             clip_scores.append(w_no_sim)
             clip_scores_w.append(w_sim)
@@ -225,12 +262,18 @@ def main(args):
 
             if args.with_tracking:
                 wandb.log({'Table': table})
-                wandb.log({'clip_score_mean': mean(clip_scores), 'clip_score_std': stdev(clip_scores),
-                        'w_clip_score_mean': mean(clip_scores_w), 'w_clip_score_std': stdev(clip_scores_w),
-                        'auc': auc, 'acc':acc, 'TPR@1%FPR': low,
-                        'w_det_dist_mean': -mean(w_metrics), 'w_det_dist_std': stdev(w_metrics),
-                        'no_w_det_dist_mean': -mean(no_w_metrics), 'no_w_det_dist_std': stdev(no_w_metrics)
-                        })
+                metrics_dict = {
+                    'clip_score_mean': mean(clip_scores), 'clip_score_std': stdev(clip_scores),
+                    'w_clip_score_mean': mean(clip_scores_w), 'w_clip_score_std': stdev(clip_scores_w),
+                    'auc': auc, 'acc':acc, 'TPR@1%FPR': low,
+                    'w_det_dist_mean': -mean(w_metrics), 'w_det_dist_std': stdev(w_metrics),
+                    'no_w_det_dist_mean': -mean(no_w_metrics), 'no_w_det_dist_std': stdev(no_w_metrics),
+                }
+                if args.msg_type == "binary":
+                    metrics_dict["Bit_acc"] = mean(bit_accs)
+                    metrics_dict["Word_acc"] = words_right / (i + 1)
+
+                wandb.log(metrics_dict)
     
             print(f'clip_score_mean: {mean(clip_scores)}')
             print(f'w_clip_score_mean: {mean(clip_scores_w)}')
@@ -296,7 +339,7 @@ if __name__ == '__main__':
     # Message encryption (for testing: putting the same message on each image, but they can be different):
     parser.add_argument('--msg_type', default='rand', help="Can be: rand or binary or decimal")
     parser.add_argument('--msg', default='1110101101')
-    # TODO
+    parser.add_argument('--use_random_msgs', action='store_true', help="Generate random message each step of cycle")
     parser.add_argument('--msgs_file', default=None, help="Path to file, whicha")
     parser.add_argument('--msg_scaler', default=100, type=int, help="Scaling coefficient of message")
 

@@ -149,19 +149,22 @@ def get_watermarking_mask(init_latents_w, args, device):
 
     return watermarking_mask
 
-class MsgLenError(Exception):
+class MsgError(Exception):
     "Raised, when len(args.msg) != args.w_radius"
     pass
 
-def encrypt_message(gt_init, args, device):
+def encrypt_message(gt_init, args, device, message):
     '''
     Inserts given message into Fourier space of gaussian noise
     '''
-    if len(args.msg) != args.w_radius and args.msg_type != "rand":
-        raise MsgLenError("Message length is not equal to watermark radius")
+    if args.use_random_msgs and (not message or len(message) != args.w_radius):
+        raise MsgError("Message argument not passed or its length is not equal to radius ")
+
+    if len(args.msg) != args.w_radius and args.msg_type != "rand" and not args.use_random_msgs:
+        raise MsgError("Message length is not equal to watermark radius")
 
     gt_patch = torch.fft.fftshift(torch.fft.fft2(gt_init), dim=(-1, -2))
-    message = np.ones([4, args.w_radius])
+    message_mat = np.ones([4, args.w_radius])
 
     if args.msg_type == "rand":
         gt_patch_tmp = copy.deepcopy(gt_patch)
@@ -173,14 +176,19 @@ def encrypt_message(gt_init, args, device):
                 gt_patch[:, j, tmp_mask] = gt_patch_tmp[0, j, 0, i].item()
     
     elif args.msg_type == "binary":
-        message[args.w_channel] = list(map(lambda x: args.msg_scaler if x == "1" else -args.msg_scaler, list(args.msg)))
+        if not args.use_random_msgs:
+            print(f"NOT USING RANDOM MESSAGE, INSERTING: {args.msg}")
+            message_mat[args.w_channel] = list(map(lambda x: args.msg_scaler if x == "1" else -args.msg_scaler, list(args.msg)))
+        else:
+            print(f"USING RANDOM MESSAGE, INSERTING: {message}")
+            message_mat[args.w_channel] = list(map(lambda x: args.msg_scaler if x == "1" else -args.msg_scaler, list(message)))
         gt_patch_tmp = copy.deepcopy(gt_patch)
         for i in range(args.w_radius, 0, -1):
             tmp_mask = circle_mask(gt_init.shape[-1], r=i)
             tmp_mask = torch.tensor(tmp_mask).to(device)
             
             for j in range(gt_patch.shape[1]):  # итерация по каналам
-                gt_patch[:, j, tmp_mask] = message[j][i - 1]
+                gt_patch[:, j, tmp_mask] = message_mat[j][i - 1]
 
     elif args.msg_type == "decimal":
         pass
@@ -188,7 +196,7 @@ def encrypt_message(gt_init, args, device):
     return gt_patch
 
 
-def get_watermarking_pattern(pipe, args, device, shape=None):
+def get_watermarking_pattern(pipe, args, device, shape=None, message=None):
     '''
     Creates elements of gt_patch array
     '''
@@ -221,7 +229,7 @@ def get_watermarking_pattern(pipe, args, device, shape=None):
         gt_patch = torch.fft.fftshift(torch.fft.fft2(gt_init), dim=(-1, -2)) * 0
         gt_patch += args.w_pattern_const
     elif 'ring' in args.w_pattern:
-        gt_patch = encrypt_message(gt_init, args, device)
+        gt_patch = encrypt_message(gt_init, args, device, message)
 
     return gt_patch
 
@@ -267,18 +275,34 @@ def eval_watermark(reversed_latents_no_w, reversed_latents_w, watermarking_mask,
 
     return no_w_metric, w_metric
 
-def decrypt_message(reversed_latents_w, watermarking_mask, gt_patch, args):
+
+def detect_msg(reversed_latents_w, args):
     '''
     Get predicted message from reversed_latents
     '''
+    pred_msg = []
+    r = args.w_radius
+    channel = args.w_channel
+
     if 'complex' in args.w_measurement:
         reversed_latents_w_fft = torch.fft.fftshift(torch.fft.fft2(reversed_latents_w), dim=(-1, -2))
-        target_patch = gt_patch
     elif 'seed' in args.w_measurement:
         reversed_latents_w_fft = reversed_latents_w
-        target_patch = gt_patch
     else:
         NotImplementedError(f'w_measurement: {args.w_measurement}')
+
+    for i in range(r, 0, -1):
+        # Getting the edges of circles:
+        if r > 1:
+            tmp_mask = (circle_mask(reversed_latents_w.shape[-1], r=i).astype(int) - circle_mask(reversed_latents_w.shape[-1], r=i - 1).astype(int)).astype(bool)
+        else:
+            tmp_mask = circle_mask(reversed_latents_w.shape[-1], r=i)
+
+        pred_circle_tmp_value = reversed_latents_w_fft[:, channel, tmp_mask].real.mean()
+
+        pred_msg.append((pred_circle_tmp_value > 0).to(int).item())
+
+    return pred_msg[::-1]   # Prediction is done from the biggest cirlce
 
 def get_p_value(reversed_latents_no_w, reversed_latents_w, watermarking_mask, gt_patch, args):
     # assume it's Fourier space wm
