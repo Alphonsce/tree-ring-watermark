@@ -157,7 +157,7 @@ def encrypt_message(gt_init, args, device):
     '''
     Inserts given message into Fourier space of gaussian noise
     '''
-    if len(args.msg) != args.w_radius ang args.msg_type != "rand":
+    if len(args.msg) != args.w_radius and args.msg_type != "rand":
         raise MsgLenError("Message length is not equal to watermark radius")
 
     gt_patch = torch.fft.fftshift(torch.fft.fft2(gt_init), dim=(-1, -2))
