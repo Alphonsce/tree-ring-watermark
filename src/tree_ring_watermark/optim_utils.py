@@ -153,7 +153,7 @@ class MsgLenError(Exception):
     "Raised, when len(args.msg) != args.w_radius"
     pass
 
-def encrypt_message(gt_init, args):
+def encrypt_message(gt_init, args, device):
     '''
     Inserts given message into Fourier space of gaussian noise
     '''
@@ -174,11 +174,10 @@ def encrypt_message(gt_init, args):
     
     elif args.msg_type == "binary":
         message[args.w_channel] = list(map(lambda x: args.msg_scaler if x == "1" else -args.msg_scaler, list(args.msg)))
-        gt_patch_tmp = deepcopy(gt_patch)
-        # iterate from r=10 to 1
-        for i in range(r, 0, -1):
-            tmp_mask = circle_mask(64, r=i)
-            tmp_mask = torch.tensor(tmp_mask).to("cpu")
+        gt_patch_tmp = copy.deepcopy(gt_patch)
+        for i in range(args.w_radius, 0, -1):
+            tmp_mask = circle_mask(gt_init.shape[-1], r=i)
+            tmp_mask = torch.tensor(tmp_mask).to(device)
             
             for j in range(gt_patch.shape[1]):  # итерация по каналам
                 gt_patch[:, j, tmp_mask] = message[j][i - 1]
@@ -222,7 +221,7 @@ def get_watermarking_pattern(pipe, args, device, shape=None):
         gt_patch = torch.fft.fftshift(torch.fft.fft2(gt_init), dim=(-1, -2)) * 0
         gt_patch += args.w_pattern_const
     elif 'ring' in args.w_pattern:
-        gt_patch = encrypt_message(gt_init, args)
+        gt_patch = encrypt_message(gt_init, argsб device)
 
     return gt_patch
 
