@@ -221,7 +221,7 @@ def get_watermarking_pattern(pipe, args, device, shape=None):
         gt_patch = torch.fft.fftshift(torch.fft.fft2(gt_init), dim=(-1, -2)) * 0
         gt_patch += args.w_pattern_const
     elif 'ring' in args.w_pattern:
-        gt_patch = encrypt_message(gt_init, argsб device)
+        gt_patch = encrypt_message(gt_init, args device)
 
     return gt_patch
 
