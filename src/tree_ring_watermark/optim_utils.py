@@ -149,8 +149,43 @@ def get_watermarking_mask(init_latents_w, args, device):
 
     return watermarking_mask
 
-def create_message(args):
+class MsgLenError(Exception):
+    "Raised, when len(args.msg) != args.w_radius"
     pass
+
+def encrypt_message(gt_patch, args):
+    '''
+    Inserts given message into Fourier space of image
+    '''
+    if len(args.msg) != args.w_radius:
+        raise MsgLenError("Message length is not equal to watermark radius")
+
+    message = np.ones([4, args.w_radius])
+
+    if args.msg_type == "rand":
+        gt_patch_tmp = copy.deepcopy(gt_patch)
+        for i in range(args.w_radius, 0, -1):
+            tmp_mask = circle_mask(gt_init.shape[-1], r=i)
+            tmp_mask = torch.tensor(tmp_mask).to(device)
+            
+            for j in range(gt_patch.shape[1]):
+                gt_patch[:, j, tmp_mask] = gt_patch_tmp[0, j, 0, i].item()
+    
+    elif args.msg_type == "binary":
+        message[args.w_channel] = list(map(lambda x: args.msg_scaler if x == "1" else -args.msg_scaler, list(args.msg)))
+        gt_patch_tmp = deepcopy(gt_patch)
+        # iterate from r=10 to 1
+        for i in range(r, 0, -1):
+            tmp_mask = circle_mask(64, r=i)
+            tmp_mask = torch.tensor(tmp_mask).to("cpu")
+            
+            for j in range(gt_patch.shape[1]):  # итерация по каналам
+                gt_patch[:, j, tmp_mask] = message[j][i - 1]
+
+    elif args.msg_type == "decimal":
+        pass
+
+    return gt_patch
 
 
 def get_watermarking_pattern(pipe, args, device, shape=None):
@@ -188,13 +223,7 @@ def get_watermarking_pattern(pipe, args, device, shape=None):
     elif 'ring' in args.w_pattern:
         gt_patch = torch.fft.fftshift(torch.fft.fft2(gt_init), dim=(-1, -2))
 
-        gt_patch_tmp = copy.deepcopy(gt_patch)
-        for i in range(args.w_radius, 0, -1):
-            tmp_mask = circle_mask(gt_init.shape[-1], r=i)
-            tmp_mask = torch.tensor(tmp_mask).to(device)
-            
-            for j in range(gt_patch.shape[1]):
-                gt_patch[:, j, tmp_mask] = gt_patch_tmp[0, j, 0, i].item()
+        gt_patch = encrypt_message(gt_patch, args)
 
     return gt_patch
 
@@ -239,6 +268,19 @@ def eval_watermark(reversed_latents_no_w, reversed_latents_w, watermarking_mask,
         NotImplementedError(f'w_measurement: {args.w_measurement}')
 
     return no_w_metric, w_metric
+
+def decrypt_message(reversed_latents_w, watermarking_mask, gt_patch, args):
+    '''
+    Get predicted message from reversed_latents
+    '''
+    if 'complex' in args.w_measurement:
+        reversed_latents_w_fft = torch.fft.fftshift(torch.fft.fft2(reversed_latents_w), dim=(-1, -2))
+        target_patch = gt_patch
+    elif 'seed' in args.w_measurement:
+        reversed_latents_w_fft = reversed_latents_w
+        target_patch = gt_patch
+    else:
+        NotImplementedError(f'w_measurement: {args.w_measurement}')
 
 def get_p_value(reversed_latents_no_w, reversed_latents_w, watermarking_mask, gt_patch, args):
     # assume it's Fourier space wm

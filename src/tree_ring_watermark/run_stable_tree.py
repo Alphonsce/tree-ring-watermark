@@ -82,6 +82,9 @@ def main(args):
     no_w_metrics = []
     w_metrics = []
 
+    bit_accs = []
+    word_accs = []
+
     if args.use_attack:
         if args.attack_type == "diff":
             attack_pipe = ReSDPipeline.from_pretrained("stabilityai/stable-diffusion-2-1", torch_dtype=torch.float16, revision="fp16")
@@ -210,9 +213,6 @@ def main(args):
             clip_scores.append(w_no_sim)
             clip_scores_w.append(w_sim)
 
-        print(
-            -mean(w_metrics)
-        )
         # roc
         if (i - args.start) % args.freq_log == 0 and (i - args.start) > args.freq_log - 1:
             preds = no_w_metrics + w_metrics
@@ -293,8 +293,13 @@ if __name__ == '__main__':
     # Stable-Tree
     parser.add_argument('--decoder_state_dict_path', default='/data/varlamov_a_data/tree-ring-watermark/ldm_decoders/sd2_decoder.pth')
 
-    # Message encryption:
-    parser.add_argument('--msg_type', default='rand')
+    # Message encryption (for testing: putting the same message on each image, but they can be different):
+    parser.add_argument('--msg_type', default='rand', help="Can be: rand or binary or decimal")
+    parser.add_argument('--msg', default='1110101101')
+    # TODO
+    parser.add_argument('--msgs_file', default=None, help="Path to file, whicha")
+    parser.add_argument('--msg_scaler', default=100, type=int, help="Scaling coefficient of message")
+
 
     args = parser.parse_args()
 
