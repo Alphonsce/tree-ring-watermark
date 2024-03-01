@@ -163,3 +163,7 @@ finetune_*
 test.sh
 
 radius_*
+
+msg_*
+
+*.png
