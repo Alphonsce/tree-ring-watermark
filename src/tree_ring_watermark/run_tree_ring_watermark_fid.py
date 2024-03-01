@@ -86,13 +86,21 @@ def main(args):
     os.makedirs(w_dir, exist_ok=True)
 
     # ground-truth patch
-    gt_patch = get_watermarking_pattern(pipe, args, device)
+    if not args.use_random_msgs:
+        gt_patch = get_watermarking_pattern(pipe, args, device)
 
     if args.run_generation:
         for i in tqdm(range(args.start, args.end)):
             seed = i + args.gen_seed
             
             current_prompt = dataset[i][prompt_key]
+
+            if args.use_random_msgs:
+                msg_key = torch.randint(0, 2, (1, args.w_radius), dtype=torch.float32, device="cpu")
+                msg_str = "".join([ str(int(ii)) for ii in msg_key.tolist()[0]])
+
+            if args.use_random_msgs:
+                gt_patch = get_watermarking_pattern(pipe, args, device, message=msg_str)
             
             ### generation
             # generation without watermarking
@@ -311,6 +319,13 @@ if __name__ == '__main__':
     parser.add_argument('--diff_attack_steps', default=60, type=int)
     parser.add_argument('--vae_attack_name', default='cheng2020-anchor')
     parser.add_argument('--vae_attack_quality', default=3, type=int)
+
+    # Message encryption (for testing: putting the same message on each image, but they can be different):
+    parser.add_argument('--msg_type', default='rand', help="Can be: rand or binary or decimal")
+    parser.add_argument('--msg', default='1110101101')
+    parser.add_argument('--use_random_msgs', action='store_true', help="Generate random message each step of cycle")
+    parser.add_argument('--msgs_file', default=None, help="Path to file, whicha")
+    parser.add_argument('--msg_scaler', default=100, type=int, help="Scaling coefficient of message")
 
     args = parser.parse_args()
     
