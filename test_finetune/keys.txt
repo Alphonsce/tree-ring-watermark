@@ -1,0 +1,2 @@
+/data/varlamov_a_data/tree-ring-watermark/test_finetune/checkpoint_000.pth	111010110101000001010111010011010100010000100111
+/data/varlamov_a_data/tree-ring-watermark/test_finetune/checkpoint_000.pth	111010110101000001010111010011010100010000100111
