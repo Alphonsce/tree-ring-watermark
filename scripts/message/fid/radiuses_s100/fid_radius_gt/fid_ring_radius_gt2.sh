@@ -1,4 +1,4 @@
-for ((r = 18; r <= 32; r += 2 )); do
+for ((r = 34; r <= 62; r += 2 )); do
     accelerate launch -m tree_ring_watermark.run_tree_ring_watermark_fid \
       --project_name fid_msg_r_gt \
       --run_name $r --w_channel 3 --w_pattern ring \
