@@ -151,6 +151,10 @@ def main(args):
                 )
             orig_image_w = outputs_w.images[0]
 
+            # distortion
+            orig_image_no_w_auged, orig_image_w_auged = image_distortion(orig_image_no_w, orig_image_w, seed, args)
+            orig_image_no_w, orig_image_w = orig_image_no_w_auged, orig_image_w_auged
+
             if args.with_tracking:
                 if i < args.max_num_log_image:
                     if args.run_no_w:
@@ -336,6 +340,16 @@ if __name__ == '__main__':
     # Stable-Signature arguments:
     parser.add_argument('--use_stable_sig', action='store_true')
     parser.add_argument('--decoder_state_dict_path', default='/data/varlamov_a_data/tree-ring-watermark/ldm_decoders/sd2_decoder.pth')
+
+    # for image distortion
+    parser.add_argument('--r_degree', default=None, type=float)
+    parser.add_argument('--jpeg_ratio', default=None, type=int)
+    parser.add_argument('--crop_scale', default=None, type=float)
+    parser.add_argument('--crop_ratio', default=None, type=float)
+    parser.add_argument('--gaussian_blur_r', default=None, type=int)
+    parser.add_argument('--gaussian_std', default=None, type=float)
+    parser.add_argument('--brightness_factor', default=None, type=float)
+    parser.add_argument('--rand_aug', default=0, type=int)
 
     args = parser.parse_args()
     
