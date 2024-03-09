@@ -63,7 +63,7 @@ def main(args):
         )
     pipe = pipe.to(device)
 
-    if args.use_stable_sig:
+    if not args.no_stable_sig:
         pipe = change_pipe_vae_decoder(pipe, weights_path=args.decoder_state_dict_path)
         print("VAE CHANGED!")
 
@@ -336,7 +336,7 @@ if __name__ == '__main__':
 
     # Stable-Tree
     parser.add_argument('--decoder_state_dict_path', default='/data/varlamov_a_data/tree-ring-watermark/ldm_decoders/sd2_decoder.pth')
-    parser.add_argument('--use_stable_sig', action='store_true')
+    parser.add_argument('--no_stable_sig', action='store_true')
 
     # Message encryption (for testing: putting the same message on each image, but they can be different):
     parser.add_argument('--msg_type', default='rand', help="Can be: rand or binary or decimal")
