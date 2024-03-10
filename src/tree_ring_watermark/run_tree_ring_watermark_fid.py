@@ -4,7 +4,6 @@ import copy
 from tqdm import tqdm
 import json
 
-from PIL import Image 
 import PIL
 import sys
 import torch
@@ -26,6 +25,9 @@ import math
 from pytorch_msssim import ssim
 
 from .stable_sig.utils_model import *
+
+from PIL import Image, ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def compute_psnr(a, b):
     mse = torch.mean((a - b) ** 2).item()
