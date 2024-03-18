@@ -1,4 +1,4 @@
-for ((r = 2; r <= 32; r += 2 )); do
+for ((r = 34; r <= 62; r += 2 )); do
     accelerate launch -m tree_ring_watermark.run_stable_tree \
       --project_name msg_long_diff_att \
       --run_name $r --w_channel 3 --w_pattern ring \
