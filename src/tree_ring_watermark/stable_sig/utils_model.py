@@ -200,4 +200,11 @@ def change_pipe_vae_decoder(pipe,
 
     pipe.vae.decode = (lambda x,  *args, **kwargs: Sampler(ldm_aef.decode(x)))  # здесь было еще .unsqueeze(0)
 
+    # def decode_foo(x, *args, **kwargs):
+    #     torch.save(x, f"/data/varlamov_a_data/dima/plots/latent_imgs/latent_{torch.randint(0, 100_000, [1]).item()}.pt")
+
+    #     return Sampler(ldm_aef.decode(x))
+    
+    # pipe.vae.decode = decode_foo
+
     return pipe
