@@ -228,8 +228,8 @@ def main(args):
         w_metrics.append(-w_metric)
 
         if args.save_locally:
-            orig_image_no_w.save(args.local_path + f"/imgs_no_w/img{i}.png")
-            orig_image_w.save(args.local_path + f"/imgs_w/w_img{i}.png")
+            orig_image_no_w_auged.save(args.local_path + f"/imgs_no_w/img{i}.png")
+            orig_image_w_auged.save(args.local_path + f"/imgs_w/w_img{i}.png")
 
         if args.with_tracking:
             if (args.reference_model is not None) and (i < args.max_num_log_image):

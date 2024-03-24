@@ -314,7 +314,7 @@ def main(params):
 
         if params.with_tracking:
             mean_table = wandb.Table(dataframe=df_mean)
-            wandb_run.log({"mean_values": df_mean})
+            wandb_run.log({"mean_values": df_mean.drop(columns=["img"])})
 
 
 def get_parser():
