@@ -310,11 +310,12 @@ def main(params):
 
         df_mean = pd.DataFrame(df.mean()).transpose()
         df_mean.to_csv(os.path.join(params.output_dir, 'mean_log_stats.csv'), index=False)
-        print(df_mean)
 
         if params.with_tracking:
-            mean_table = wandb.Table(dataframe=df_mean)
-            wandb_run.log({"mean_values": df_mean.drop(columns=["img"])})
+            # mean_table = wandb.Table(dataframe=df_mean)
+            # wandb_run.log({"mean_values": df_mean.drop(columns=["img"])})
+            log_dict = df_mean.drop(columns=["img"]).rename(columns={"bit_acc_none": "Bit_acc", "word_acc_none": "Word_acc"}).to_dict("records")[0]
+            wandb.log(log_dict)
 
 
 def get_parser():
