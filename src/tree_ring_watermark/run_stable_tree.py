@@ -105,6 +105,8 @@ def main(args):
         seed = i + args.gen_seed
         
         current_prompt = dataset[i][prompt_key]
+        if args.given_prompt:
+            current_prompt = args.given_prompt
 
         if args.use_random_msgs:
             msg_key = torch.randint(0, 2, (1, args.w_radius), dtype=torch.float32, device="cpu")
@@ -191,6 +193,12 @@ def main(args):
 
         # eval
         no_w_metric, w_metric = eval_watermark(reversed_latents_no_w, reversed_latents_w, watermarking_mask, gt_patch, args)
+        
+        if args.save_rev_lat:
+            rev_lat_path = f"{args.path_rev_lat}/s_{args.msg_scaler}_r_{args.w_radius}"
+            if not os.path.exists(rev_lat_path):
+                os.makedirs(rev_lat_path)
+            torch.save(reversed_latents_w.to(torch.complex64), rev_lat_path)
 
         # detect msg
         if args.msg_type == "binary":
@@ -275,7 +283,8 @@ def main(args):
                     metrics_dict["Bit_acc"] = mean(bit_accs)
                     metrics_dict["Word_acc"] = words_right / (i + 1)
 
-                wandb.log(metrics_dict)
+                if (i - args.start) > 0:
+                    wandb.log(metrics_dict)
     
             print(f'clip_score_mean: {mean(clip_scores)}')
             print(f'w_clip_score_mean: {mean(clip_scores_w)}')
@@ -343,8 +352,12 @@ if __name__ == '__main__':
     parser.add_argument('--msg_type', default='rand', help="Can be: rand or binary or decimal")
     parser.add_argument('--msg', default='1110101101')
     parser.add_argument('--use_random_msgs', action='store_true', help="Generate random message each step of cycle")
-    parser.add_argument('--msgs_file', default=None, help="Path to file, whicha")
     parser.add_argument('--msg_scaler', default=100, type=int, help="Scaling coefficient of message")
+
+    # For testing
+    parser.add_argument('--given_prompt', default=None, type=str)
+    parser.add_argument('--save_rev_lat', action='store_true', help="Flag to save reversed latents")
+    parser.add_argument('--path_rev_lat', default=None, type=str)
 
     args = parser.parse_args()
 
