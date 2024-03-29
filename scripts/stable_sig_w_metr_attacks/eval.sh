@@ -8,14 +8,15 @@
 # )
 
 names=(
-    "jpeg"
-    "crop"
-    "blur"
-    "noise"
-    "brightness"
-    "rotate"
-    "diff_150"
-    "no_attack"
+    # "jpeg"
+    # "crop"
+    # "blur"
+    # "noise"
+    # "brightness"
+    # "rotate"
+    # "diff_150"
+    # "no_attack"
+    "vae_2018_q_1"
 )
 
 PROJECT=eval_stable_tree_all_attacks
