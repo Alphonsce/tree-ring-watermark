@@ -198,7 +198,7 @@ def main(args):
             rev_lat_path = f"{args.path_rev_lat}/s_{args.msg_scaler}_r_{args.w_radius}"
             if not os.path.exists(rev_lat_path):
                 os.makedirs(rev_lat_path)
-            torch.save(reversed_latents_w.to(torch.complex64), rev_lat_path)
+            torch.save(reversed_latents_w.to(torch.complex64), f"{rev_lat_path}/rev_lat.pt")
 
         # detect msg
         if args.msg_type == "binary":
@@ -272,16 +272,17 @@ def main(args):
 
             if args.with_tracking:
                 wandb.log({'Table': table})
-                metrics_dict = {
-                    'clip_score_mean': mean(clip_scores), 'clip_score_std': stdev(clip_scores),
-                    'w_clip_score_mean': mean(clip_scores_w), 'w_clip_score_std': stdev(clip_scores_w),
-                    'auc': auc, 'acc':acc, 'TPR@1%FPR': low,
-                    'w_det_dist_mean': -mean(w_metrics), 'w_det_dist_std': stdev(w_metrics),
-                    'no_w_det_dist_mean': -mean(no_w_metrics), 'no_w_det_dist_std': stdev(no_w_metrics),
-                }
-                if args.msg_type == "binary":
-                    metrics_dict["Bit_acc"] = mean(bit_accs)
-                    metrics_dict["Word_acc"] = words_right / (i + 1)
+                if (i - args.start) > 0:
+                    metrics_dict = {
+                        'clip_score_mean': mean(clip_scores), 'clip_score_std': stdev(clip_scores),
+                        'w_clip_score_mean': mean(clip_scores_w), 'w_clip_score_std': stdev(clip_scores_w),
+                        'auc': auc, 'acc':acc, 'TPR@1%FPR': low,
+                        'w_det_dist_mean': -mean(w_metrics), 'w_det_dist_std': stdev(w_metrics),
+                        'no_w_det_dist_mean': -mean(no_w_metrics), 'no_w_det_dist_std': stdev(no_w_metrics),
+                    }
+                    if args.msg_type == "binary":
+                        metrics_dict["Bit_acc"] = mean(bit_accs)
+                        metrics_dict["Word_acc"] = words_right / (i + 1)
 
                 if (i - args.start) > 0:
                     wandb.log(metrics_dict)
