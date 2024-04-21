@@ -110,7 +110,12 @@ setup(
     url="https://github.com/YuxinWenRick/tree-ring-watermark",
     package_dir={"": "src"},
     packages=find_packages("src"),
-    include_package_data=True,
+    # include_package_data=True,
+    
+    package_data={
+        'tree_ring_watermark': ['src/tree_ring_watermark/open_clip/bpe_simple_vocab_16e6.txt.gz', 'src/tree_ring_watermark/open_clip/model_configs/*.json']
+    },
+
     python_requires=">=3.7.0",
     install_requires=install_requires,
     extras_require=extras,
@@ -149,3 +154,4 @@ setup(
 #      twine upload dist/* -r pypi
 # 8. Add release notes to the tag in github once everything is looking hunky-dory.
 # 9. Update the version in __init__.py, setup.py to the new version "-dev" and push to master
+
