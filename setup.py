@@ -110,7 +110,7 @@ setup(
     url="https://github.com/YuxinWenRick/tree-ring-watermark",
     package_dir={"": "src"},
     packages=find_packages("src"),
-    # include_package_data=True,
+    include_package_data=True,
     
     package_data={
         'tree_ring_watermark': ['src/tree_ring_watermark/open_clip/bpe_simple_vocab_16e6.txt.gz', 'src/tree_ring_watermark/open_clip/model_configs/*.json']
