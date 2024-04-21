@@ -77,3 +77,4 @@ accelerate launch -m tree_ring_watermark.run_tree_ring_watermark_fid \
   --attack_type vae \
   --vae_attack_name bmshj2018-factorized \
   --vae_attack_quality 1 
+
