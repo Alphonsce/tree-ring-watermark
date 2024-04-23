@@ -218,7 +218,10 @@ def main(args):
 
             if correct_bits_tmp == args.w_radius:
                 words_right += 1
-
+                if args.metr_pp_word_acc_eval and args.save_locally:
+                    orig_image_no_w_auged.save(args.local_path + f"/imgs_no_w/img{i}.png")
+                    orig_image_w_auged.save(args.local_path + f"/imgs_w/w_img{i}.png")
+                
 
         if args.reference_model is not None:
             sims = measure_similarity([orig_image_no_w, orig_image_w], current_prompt, ref_model, ref_clip_preprocess, ref_tokenizer, device)
@@ -235,7 +238,7 @@ def main(args):
         no_w_metrics.append(-no_w_metric)
         w_metrics.append(-w_metric)
 
-        if args.save_locally:
+        if args.save_locally and not args.metr_pp_word_acc_eval:
             orig_image_no_w_auged.save(args.local_path + f"/imgs_no_w/img{i}.png")
             orig_image_w_auged.save(args.local_path + f"/imgs_w/w_img{i}.png")
 
@@ -319,8 +322,8 @@ if __name__ == '__main__':
 
     # watermark
     parser.add_argument('--w_seed', default=999999, type=int)
-    parser.add_argument('--w_channel', default=0, type=int)
-    parser.add_argument('--w_pattern', default='rand')
+    parser.add_argument('--w_channel', default=3, type=int)
+    parser.add_argument('--w_pattern', default='ring')
     parser.add_argument('--w_mask_shape', default='circle')
     parser.add_argument('--w_radius', default=10, type=int)
     parser.add_argument('--w_measurement', default='l1_complex')
@@ -359,6 +362,7 @@ if __name__ == '__main__':
     parser.add_argument('--given_prompt', default=None, type=str)
     parser.add_argument('--save_rev_lat', action='store_true', help="Flag to save reversed latents")
     parser.add_argument('--path_rev_lat', default=None, type=str)
+    parser.add_argument('--metr_pp_word_acc_eval', default=None, type=str)
 
     args = parser.parse_args()
 
